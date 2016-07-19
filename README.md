@@ -24,8 +24,10 @@ There are a couple of things you can do to improve the performance.
 * Adjust your 10 Gig card for optimal settings.
 	- If you are using a Myricom card...
 	- Setup the module parameters by removing the module and then probing it again with the new options:
-		sudo rmmod myri10ge
-		sudo modprobe myri10ge myri10ge_max_slices=3
+	
+	        sudo rmmod myri10ge
+	        sudo modprobe myri10ge myri10ge_max_slices=3
+
 	- A full list of options is available at http://www.myricom.com/software/myri10ge/991-which-myri10ge-load-time-options-are-available-with-the-linux-in-kernel-myri10ge-driver.html
 	- There is a helpful utility script which is packaged with their driver download as well.  If you download the Myri10GE_Linux_1.5.3.p5 source tgz from http://www.myricom.com/support/downloads/myri10ge.html.  You will find in the linux folder a msixbind.sh script.  This script allows you to bind memory slices to CPU cores which can be helpful when manually sorting CPU load.
 
