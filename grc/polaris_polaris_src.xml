@@ -1,0 +1,317 @@
+<?xml version="1.0"?>
+<block>
+    <name>Polaris Source</name>
+    <key>polaris_polaris_src</key>
+    <category>DRS Blocks</category>
+    <import>import polaris</import>
+    <make>polaris.polaris_src($dev_ip, $stream_port, $stream_ip, $fiber_ip, $nchan, $i_op, $phys)
+self.$(id).update_tuners($valuet1, 1)
+self.$(id).update_tuners($valuet2, 2)
+self.$(id).update_tuners($valuet3, 3)
+self.$(id).update_tuners($valuet4, 4)
+self.$(id).update_preamp($valuepa1, 1)
+self.$(id).update_preamp($valuepa2, 2)
+self.$(id).update_preamp($valuepa3, 3)
+self.$(id).update_preamp($valuepa4, 4)
+self.$(id).update_freq($valuef1, 1)
+self.$(id).update_freq($valuef2, 2)
+self.$(id).update_freq($valuef3, 3)
+self.$(id).update_freq($valuef4, 4)
+self.$(id).update_atten($valuea1, 1)
+self.$(id).update_atten($valuea2, 2)
+self.$(id).update_atten($valuea3, 3)
+self.$(id).update_atten($valuea4, 4)
+self.$(id).update_samprate($valuesr)
+    </make>
+    <callback>update_freq($valuef1, 1)</callback>
+    <callback>update_freq($valuef2, 2)</callback>
+    <callback>update_freq($valuef3, 3)</callback>
+    <callback>update_freq($valuef4, 4)</callback>
+    <callback>update_atten($valuea1, 1)</callback>
+    <callback>update_atten($valuea2, 2)</callback>
+    <callback>update_atten($valuea3, 3)</callback>
+    <callback>update_atten($valuea4, 4)</callback>
+    <callback>update_samprate($valuesr)</callback>
+    <callback>update_tuners($valuet1, 1)</callback>
+    <callback>update_tuners($valuet2, 2)</callback>
+    <callback>update_tuners($valuet3, 3)</callback>
+    <callback>update_tuners($valuet4, 4)</callback>
+    <callback>update_preamp($valuepa1, 1)</callback>
+    <callback>update_preamp($valuepa2, 2)</callback>
+    <callback>update_preamp($valuepa3, 3)</callback>
+    <callback>update_preamp($valuepa4, 4)</callback>
+    <param>
+        <name>Polaris Command IP</name>
+        <key>dev_ip</key>
+        <type>string</type>
+    </param>
+    <param>
+        <name>Polaris 10 Gig IP</name>
+        <key>stream_ip</key>
+        <type>string</type>
+    </param>
+    <param>
+        <name>Machine 10 Gig IP</name>
+        <key>fiber_ip</key>
+        <type>string</type>
+    </param>
+    <param>
+        <name>Data Stream Port</name>
+        <key>stream_port</key>
+        <type>int</type>
+    </param>
+    <param>
+        <name>Physical Output Port</name>
+        <key>phys</key>
+        <value>0</value>
+        <type>int</type>
+    </param>
+    <param>
+        <name>Independent Operation</name>
+        <key>i_op</key>
+        <value>True</value>
+        <type>bool</type>
+    </param>
+    <param>
+        <name>Sample Rate</name>
+        <key>valuesr</key>
+        <value>1000000</value>
+        <type>real</type>
+    </param>
+    <param>
+		<name>Num Outputs</name>
+		<key>nchan</key>
+		<value>1</value>
+		<type>int</type>
+		<option>
+			<name>1</name>
+			<key>1</key>
+		</option>
+		<option>
+			<name>2</name>
+			<key>2</key>
+		</option>
+		<option>
+			<name>3</name>
+			<key>3</key>
+		</option>
+		<option>
+			<name>4</name>
+			<key>4</key>
+		</option>
+    </param>
+    <param>
+        <name>Output 1 Frequency</name>
+        <key>valuef1</key>
+        <value>100000000</value>
+        <type>real</type>
+    </param>
+    <param>
+        <name>Output 1 Attenuation</name>
+        <key>valuea1</key>
+        <value>0</value>
+        <type>real</type>
+    </param>
+    <param>
+        <name>Output 1 Enable PreAmp</name>
+        <key>valuepa1</key>
+        <value>False</value>
+        <type>bool</type>
+    </param>
+    <param>
+        <name>Output 1 Tuner</name>
+        <key>valuet1</key>
+        <value>1</value>
+		<type>int</type>
+		<option>
+			<name>1</name>
+			<key>1</key>
+		</option>
+		<option>
+			<name>2</name>
+			<key>2</key>
+		</option>
+		<option>
+			<name>3</name>
+			<key>3</key>
+		</option>
+		<option>
+			<name>4</name>
+			<key>4</key>
+		</option>
+    </param>
+    <param>
+        <name>Output 2 Frequency</name>
+        <key>valuef2</key>
+        <value>100000000</value>
+        <type>real</type>
+        <hide>#if $nchan() > 1 then 'none' else 'all'#</hide>
+    </param>
+    <param>
+        <name>Output 2 Attenuation</name>
+        <key>valuea2</key>
+        <value>0</value>
+        <type>real</type>
+        <hide>#if $nchan() > 1 then 'none' else 'all'#</hide>
+    </param>
+    <param>
+        <name>Output 2 Enable PreAmp</name>
+        <key>valuepa2</key>
+        <value>False</value>
+        <type>bool</type>
+         <hide>#if $nchan() > 1 then 'none' else 'all'#</hide>
+    </param>
+    <param>
+        <name>Output 2 Tuner</name>
+        <key>valuet2</key>
+        <value>2</value>
+		<type>int</type>
+        <hide>#if $nchan() > 1 then 'none' else 'all'#</hide>
+		<option>
+			<name>1</name>
+			<key>1</key>
+		</option>
+		<option>
+			<name>2</name>
+			<key>2</key>
+		</option>
+		<option>
+			<name>3</name>
+			<key>3</key>
+		</option>
+		<option>
+			<name>4</name>
+			<key>4</key>
+		</option>
+    </param>
+    <param>
+        <name>Output 3 Frequency</name>
+        <key>valuef3</key>
+        <value>100000000</value>
+        <type>real</type>
+        <hide>#if $nchan() > 2 then 'none' else 'all'#</hide>
+    </param>
+    <param>
+        <name>Output 3 Attenuation</name>
+        <key>valuea3</key>
+        <value>0</value>
+        <type>real</type>
+        <hide>#if $nchan() > 2 then 'none' else 'all'#</hide>
+    </param>
+    <param>
+        <name>Output 3 Enable PreAmp</name>
+        <key>valuepa3</key>
+        <value>False</value>
+        <type>bool</type>
+         <hide>#if $nchan() > 2 then 'none' else 'all'#</hide>
+    </param>
+    <param>
+        <name>Output 3 Tuner</name>
+        <key>valuet3</key>
+        <value>3</value>
+		<type>int</type>
+        <hide>#if $nchan() > 2 then 'none' else 'all'#</hide>
+		<option>
+			<name>1</name>
+			<key>1</key>
+		</option>
+		<option>
+			<name>2</name>
+			<key>2</key>
+		</option>
+		<option>
+			<name>3</name>
+			<key>3</key>
+		</option>
+		<option>
+			<name>4</name>
+			<key>4</key>
+		</option>
+    </param>
+    <param>
+        <name>Output 4 Frequency</name>
+        <key>valuef4</key>
+        <value>100000000</value>
+        <type>real</type>
+        <hide>#if $nchan() > 3 then 'none' else 'all'#</hide>
+    </param>
+    <param>
+        <name>Output 4 Attenuation</name>
+        <key>valuea4</key>
+        <value>0</value>
+        <type>real</type>
+        <hide>#if $nchan() > 3 then 'none' else 'all'#</hide>
+    </param>
+    <param>
+        <name>Output 4 Enable PreAmp</name>
+        <key>valuepa4</key>
+        <value>False</value>
+        <type>bool</type>
+         <hide>#if $nchan() > 3 then 'none' else 'all'#</hide>
+    </param>
+    <param>
+        <name>Output 4 Tuner</name>
+        <key>valuet4</key>
+        <value>4</value>
+		<type>int</type>
+        <hide>#if $nchan() > 3 then 'none' else 'all'#</hide>
+		<option>
+			<name>1</name>
+			<key>1</key>
+		</option>
+		<option>
+			<name>2</name>
+			<key>2</key>
+		</option>
+		<option>
+			<name>3</name>
+			<key>3</key>
+		</option>
+		<option>
+			<name>4</name>
+			<key>4</key>
+		</option>
+    </param>
+    <check> (64000000 >= $valuesr  >= 977) or $valuesr ==128000000 </check>
+    <check>4>=$nchan>=1</check>
+    <check>6200000000>=$valuef1>=2000000</check>
+    <check>6200000000>=$valuef2>=2000000</check>
+    <check>6200000000>=$valuef3>=2000000</check>
+    <check>6200000000>=$valuef4>=2000000</check>
+    <check>64>=$valuea1>=0</check>
+    <check>64>=$valuea2>=0</check>
+    <check>64>=$valuea3>=0</check>
+    <check>64>=$valuea4>=0</check>
+    <check>4>=$valuet1>=1</check>
+    <check>4>=$valuet2>=1</check>
+    <check>4>=$valuet3>=1</check>
+    <check>4>=$valuet4>=1</check>
+    <source>
+		<name>out</name>
+		<type>complex</type>
+		<nports>$nchan</nports>
+	</source>
+    <doc>
+    This block will allow you to stream data from the Polaris radio.  
+
+    Parameters:
+
+    Polaris Command IP : The TCP connection for command and control.  
+    Polaris 10 Gig IP : The ip of the 10gig connection on the unit.  
+    Machine 10 Gig IP : The IP of the destination of the data packets.
+    Data Stream Port : The port the UDP data is coming in on.
+
+    Independent Operation : Allows each tuner to operate indepenently or as a group.
+
+    Sample Rate : The sample rate for all active output tuners.  
+        Accepts .000977 - 64 MHz in 1 Hz resolution or 128 MHz.
+
+    Num Outputs : Total number of GNU radio outputs.
+
+    Each output has a Frequency, Attenuation, PreAmp, and Tuner tabs that accept values. 
+            Frequency : Accepts  2 - 6200 MHz.
+            Attenuation : Accepts  0 dB to 46 dB.
+            PreAmp : Choose to enable or diable the preamp on this output.
+            Output Tuner : Choose what RF inputs you are plugged into for that output.
+    </doc>
+</block>

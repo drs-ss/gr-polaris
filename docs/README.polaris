@@ -1,0 +1,11 @@
+This is the polaris-write-a-block package meant as a guide to building
+out-of-tree packages. To use the polaris blocks, the Python namespaces
+is in 'polaris', which is imported as:
+
+    import polaris
+
+See the Doxygen documentation for details about the blocks available
+in this package. A quick listing of the details can be found in Python
+after importing by using:
+
+    help(polaris)

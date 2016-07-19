@@ -1,0 +1,7 @@
+/*! \mainpage
+
+Welcome to the GNU Radio POLARIS Block
+
+The Polaris block is intended to provide a bare bones stream of data from a Polaris unit over a 10 gigabit connection.  It provides basic command and control support for the user to modify the radio while running.
+
+*/
