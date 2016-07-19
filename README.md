@@ -7,7 +7,7 @@ This is the GNU Radio OOT module for command and control of the DRS Polaris radi
 If you already have GNURadio installed, you can install this block through the standard install process.
 
 	git clone https://github.com/drs-ss/gr-polaris
-	git gr-polaris
+	cd gr-polaris
 	mkdir build
 	cd build
 	cmake ..
