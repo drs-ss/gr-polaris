@@ -2,7 +2,7 @@
 <block>
     <name>Polaris Source</name>
     <key>polaris_polaris_src</key>
-    <category>DRS Blocks</category>
+    <category>[DRS Blocks]</category>
     <import>import polaris</import>
     <make>polaris.polaris_src($dev_ip, $stream_port, $stream_ip, $fiber_ip, $nchan, $i_op, $phys)
 self.$(id).update_tuners($valuet1, 1)
