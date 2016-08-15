@@ -32,8 +32,6 @@ complex_manager::complex_manager(std::string ip, int port)
 
     m_request_flip = false;
     m_request_amount = 0;
-    m_safety_count = 0;
-
     for (int i = 0; i < NUM_STREAMS; i++) {
         m_mang[i].out_count[0] = 0;
         m_mang[i].out_count[1] = 0;
@@ -57,9 +55,9 @@ complex_manager::complex_manager(std::string ip, int port)
 
     // Save these aligned buffer pointers
     for (int i = 0; i < NUM_STREAMS; i++) {
-        m_mang[i].out_buff[0] = reinterpret_cast<std::complex<float> *>
+        m_mang[i].out_buff[0]= reinterpret_cast<std::complex<float> *>
             (m_aligned_buffs->at(i));
-        m_mang[i].out_buff[1] = reinterpret_cast<std::complex<float> *>
+        m_mang[i].out_buff[1]= reinterpret_cast<std::complex<float> *>
             (m_aligned_buffs->at(i + NUM_STREAMS));
     }
 
@@ -101,10 +99,11 @@ complex_manager::threads_active()
 void 
 complex_manager::update_tuners(int *tuners, int num_tuners)
 {
+
     for (int i = 0; i < NUM_STREAMS; i++) {
         m_mang[i].tuner_valid_safe = false;
-        for (int j = 0; j < num_tuners; j++) {
-            if ((i + 1) == tuners[j]) {
+        for (int j = 0; j < num_tuners; j++) { 
+            if ((i+1) == tuners[j]) { 
                 m_mang[i].tuner_valid_safe = true;
             }
         }
@@ -116,75 +115,74 @@ complex_manager::update_tuners(int *tuners, int num_tuners)
     }
 }
 
-int 
+void 
 complex_manager::fill_buffers(std::vector<void *> buffs,
-                                  int *tuners,
-                                  int count)
+                                  int *tuners, int* rates)
 {
-    if (m_update_valid_streams)
-        return 0;
+    if (m_update_valid_streams){
+        for (int i=0; i<buffs.size(); i++) {
+            rates[i]=0;  // reset rates when streams are updated 
+        }
+        return;
+    }
 
-    // Prevent infinite recursion.
-    m_safety_count += 1;
-    /* 
-    First we have to know what amount of data we have available to
-        ship out. 
-    */ 
-    int min = count;
+    while (m_request_flip) {
+        usleep(SHORT_USLEEP);
+    }
+
+     
+    // First check how much data is available 
     int i = 0;
     for (; i < NUM_STREAMS; i++) {
-        m_mang[i].flip = false;
-        if (m_mang[i].out_count[!m_mang[i].out_pointer] <= min
-            && m_mang[i].tuner_valid) {
-            min = m_mang[i].out_count[!m_mang[i].out_pointer];
-            if (min == 0) {
-                m_mang[i].flip = true;
+        if (tuners[i] > 0 && tuners[i] <= NUM_STREAMS) {
+            // It's a valid tuner
+            if (rates[i] >= m_mang[tuners[i]-1].out_count[
+                                  !m_mang[tuners[i]-1].out_pointer]) { 
+                // We don't have enough to satisfy this request
+                rates[i] = m_mang[tuners[i]-1].out_count[
+                                  !m_mang[tuners[i]-1].out_pointer];
             }
         }
     }
-
-    if (min == 0) {
-        /* 
-        If minimum was set to 0 at least 1 of the read buffers
-            didn't have any items in it.
-        Request the processing loop flip the buffers we set, and
-            see if we had any data waiting.
-        */
-        m_request_flip = true;
-        while (m_request_flip) {
-            usleep(SHORT_USLEEP);
-        }
-        if (m_safety_count < NUM_RECURSIVE) {
-            // Try to get data again.
-            return fill_buffers(buffs, tuners, count);
-        } else {
-            // Otherwise just return 0 this time, they'll be back.
-            m_safety_count = 0;
-            return 0;
-        }
-    }
-
     // Temporary pointers to copy targets
     void *targets[NUM_STREAMS] = { };
-    for (i = 0; i < buffs.size(); i++) {
-        if (tuners[i] <= NUM_STREAMS && tuners[i] > 0) {
-            targets[tuners[i] - 1] = buffs[i];
+    int translated[NUM_STREAMS] = {0, 0, 0, 0, 0, 0, 0, 0};
+    for (i = 0; i < buffs.size(); i++) { 
+        if (tuners[i] <= NUM_STREAMS && tuners[i] > 0) { //valid tuner
+            targets[tuners[i] -1] = buffs[i]; 
+            translated[tuners[i] -1] = rates[i]; 
         }
     }
 
     // Remove the minimum amount from each of the buffers.
-    int cpy_amnt = min * sizeof(std::complex<float>);
+    int cpy_amnt = 0;
+    bool needs_flip = false;
+
     for (i = 0; i < NUM_STREAMS; i++) {
-        if (targets[i] != NULL) {
-            memcpy(targets[i], m_mang[i].get_read_buffer(), 
-                   cpy_amnt);
-            m_mang[i].read_index[!m_mang[i].out_pointer] += min;
-            m_mang[i].out_count[!m_mang[i].out_pointer] -= min;
+        cpy_amnt = translated[i] * sizeof(std::complex<float>);
+        if (translated[i] == 0 && m_mang[i].tuner_valid) {
+            needs_flip = true;
+        }else {
+            if (targets[i] != NULL) {
+                memcpy(targets[i], m_mang[i].get_read_buffer(), 
+                       cpy_amnt);
+                m_mang[i].read_index[!m_mang[i].out_pointer] += 
+                    translated[i];
+                m_mang[i].out_count[!m_mang[i].out_pointer] -= 
+                    translated[i];
+            }
         }
     }
-
-    m_safety_count = 0;
-    return min;
+    
+    if (needs_flip) {
+        for (i = 0; i < NUM_STREAMS; i++) {
+            if (translated[i] <= 0 && m_mang[i].tuner_valid) {
+                m_mang[i].flip = true;
+            }
+        }
+        m_request_flip = true;
+    }
+    return;
 }
 
 void 
@@ -246,6 +244,7 @@ complex_manager::operator()()
         // Request a new buffer full of packets.
         length = 0;
         m_saved_packets = m_udp_listener->get_buffer_list(length);
+
         if (length == 0) {
             // There wasn't anything to process, try again.
             usleep(LONG_USLEEP);
@@ -282,32 +281,20 @@ complex_manager::operator()()
             m_packet_buffer[setup_thread] = 
                 reinterpret_cast<boost::uint32_t *>
                 (m_saved_packets->at(index));
-
             // Grab only what we need from the Vita49 packet.
             boost::uint32_t flipped = 
                 ntohl(m_packet_buffer[setup_thread][0]);
             boost::uint32_t got = 
-                ((flipped & static_cast<boost::uint32_t>(0xF0000)) >> 16);
+                ((flipped & (boost::uint32_t)0xF0000) >> 16);
             flipped = ntohl(m_packet_buffer[setup_thread][1]);
             boost::uint32_t stream_id = flipped;
             // Map stream_id to an index.
             int expected = 0;
-            if (stream_id == 0) {
-                stream_id = 0;
-            } else if (stream_id == 2) {
-                stream_id = 1;
-            } else if (stream_id == 4) {
-                stream_id = 2;
-            } else if (stream_id == 6) {
-                stream_id = 3;
-            } else {
-                std::cout << "Invalid stream ID recieved : " 
-                    << stream_id << std::endl;
-                index += 1;
-                continue;
-            }
+
             if (!m_mang[stream_id].tuner_valid) {
                 // This stream isn't valid, ignore this packet.
+                std::cout << "Invalid stream ID recieved : " 
+                    << stream_id << std::endl;
                 index += 1;
                 continue;
             }
@@ -315,18 +302,8 @@ complex_manager::operator()()
             m_target_buffer[setup_thread] = 
                 m_mang[stream_id].get_active_buffer(
                     m_start_index[setup_thread]);
-
             if (m_start_index[setup_thread] + COMPLEX_PER_PACKET
                 >= NUM_COMPLEX) {
-                // Our buffer is full, wait a second and try again.
-                for (int j = 0; j < NUM_STREAMS; j++) {
-                    if (m_mang[j].tuner_valid && m_mang[j].out_count[m_mang[j].out_pointer] == 0) {
-                        index += 1;
-                        std::cout << CAPPING_LOSS_MSG;
-                        m_mang[stream_id].last_count = got;
-                        break;
-                    }
-                }
                 usleep(SHORT_USLEEP);
                 continue;
             }
@@ -347,11 +324,9 @@ complex_manager::operator()()
                 // Report packet loss to the user.
                 std::cout << PACKET_LOSS_MSG;
             }
-
             // Increment our counter
             m_mang[stream_id].out_count[m_mang[stream_id].out_pointer]
                 += COMPLEX_PER_PACKET;
-
             // Start the thread.
             m_process_tasks[setup_thread]->wake_up_thread();
 
@@ -363,6 +338,7 @@ complex_manager::operator()()
     while (threads_active()) {
         usleep(LONG_USLEEP);
     }
+
 }
 
 /* 
@@ -382,16 +358,15 @@ inline complex_manager::process_packet(int i)
         boost::uint32_t flipped = ntohl(m_packet_buffer[i][j]);
         // Get the left and right original values as int16's.
         boost::int16_t left_original = 
-            static_cast<boost::int16_t>
+            (boost::int16_t)
             (((flipped & (boost::uint32_t)0xFFFF0000)) >> 16);
         boost::int16_t right_original =
-            static_cast<boost::int16_t>
-            (flipped & (boost::uint32_t)0xFFFF);
+            (boost::int16_t)(flipped & (boost::uint32_t)0xFFFF);
 
         // Divide by our scale.
         float left, right;
-        left = (static_cast<float>(left_original) / IQ_SCALE_FACTOR);
-        right = (static_cast<float>(right_original) / IQ_SCALE_FACTOR);
+        left = ((float)left_original / IQ_SCALE_FACTOR);
+        right = ((float)right_original / IQ_SCALE_FACTOR);
 
         // Store our complex value.
         m_target_buffer[i][m_start_index[i] + j - start] = 

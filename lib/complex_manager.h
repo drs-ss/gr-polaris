@@ -50,7 +50,7 @@
  * means the total amount of memory usage is NUM_STREAMS * 2 * 
  * NUM_COMPLEX * sizeof(std::complex<float>). 
 */
-#define NUM_COMPLEX 20000000
+#define NUM_COMPLEX 200000000
 
 /** 
  * @def COMPLEX_PER_PACKET 
@@ -81,7 +81,7 @@
  * complex manager will be able to collect. 
  *  
 */
-#define NUM_STREAMS 4
+#define NUM_STREAMS 8
 
 /**
  * @def NUM_THREADS 
@@ -121,15 +121,14 @@
 #define PACKET_LOSS_MSG "L"
 
 /** 
- * @def CAPPING_LOSS_MSG
- * @brief Defines the capping loss message
+ * @def IQ_SCALE_FACTOR 
+ * @brief Defines the scaler value for IQ data
  *  
- * CAPPING_LOSS_MSG is the message that gets displayed to the 
- * user when the complex manager's buffers are full.  It 
- * represents a single packets worth of samples being dropped 
- * from the buffer (typically 994 samples). 
-  */ 
-#define CAPPING_LOSS_MSG "C"
+ * IQ_SCALE_FACTOR is the scaler value we divide our IQ samples 
+ * by.  We do this because GNU radio expects the samples to be 
+ * normalized. 
+*/
+#define IQ_SCALE_FACTOR 32768.0f
 
 /**  
  * complex_manager class for stripping complex values out of UDP
@@ -172,9 +171,6 @@ private:
 
     buffer_manager m_mang[NUM_STREAMS];
 
-    // Scale factor for incoming iq samples
-    static const float IQ_SCALE_FACTOR = 32768;
-
     // Pointer to a buffer of packets
     aligned_buffer::sptr m_saved_packets;
 
@@ -183,8 +179,7 @@ private:
 
     volatile bool m_run;
     volatile bool m_request_flip;
-    volatile int m_request_amount;
-    int m_safety_count;
+    volatile int  m_request_amount;
     volatile bool m_update_valid_streams;
 
     // Used to allocated aligned buffers.
@@ -236,15 +231,15 @@ public:
      * buffer recieves the same amount (expected_count). 
      * 
      * @param buffs - A vector of buffers to place the data into.
-     * @param expected_tuners - The tuner number for each buffer
-     * @param expected_count - The expected amount to be copied into
-     *                       the buffers.
-     * 
-     * @return int - Number of items that were actually copied. 
-     *         Will not be more than expected_count.
+     * @param tuners - Which tuner should go in each buffer.
+     * @param rates - The how many samples should go in each buffer.
+     *  
+     * @note Amount returned is not guarenteed to be the amount 
+     *      requested.  The "rates" parameter is updated to how much
+     *      was actually returned into each buffers
      */
-    int fill_buffers(std::vector<void *> buffs, int *expected_tuners,
-                     int expected_count);
+    void fill_buffers(std::vector<void *> buffs, int *tuners,
+                     int* rates);
 
     /**
      * This operator will be executed inside of a seperate thread, 

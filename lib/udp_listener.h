@@ -16,7 +16,6 @@
  * the Free Software Foundation, Inc., 51 Franklin Street,
  * Boston, MA 02110-1301, USA.
  */
-
 /** @file udp_listener.h
  *  @brief Contains udp_listener class and defines used in
  *  packet collection.
@@ -91,6 +90,7 @@
  * be processed. 
 */
 #define SHORT_USLEEP 5
+
 
 /**
  * UDPListener class listens for UDP packets to come in and 

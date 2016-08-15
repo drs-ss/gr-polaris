@@ -2,40 +2,78 @@
 <block>
     <name>Polaris Source</name>
     <key>polaris_polaris_src</key>
-    <category>[DRS Blocks]</category>
+    <category>DRS Blocks</category>
     <import>import polaris</import>
-    <make>polaris.polaris_src($dev_ip, $stream_port, $stream_ip, $fiber_ip, $nchan, $i_op, $phys)
-self.$(id).update_tuners($valuet1, 1)
-self.$(id).update_tuners($valuet2, 2)
-self.$(id).update_tuners($valuet3, 3)
-self.$(id).update_tuners($valuet4, 4)
+    <make>polaris.polaris_src($dev_ip, $stream_port, $mne_port, $stream_ip, $fiber_ip, ($numddc1+((($nchan/2)-($nchan/4)) * $numddc2)+(($nchan/3)*$numddc3)+(($nchan/4) * $numddc4)), $nchan, $i_op, $phys)
+self.$(id).update_groups(1, $valuet1, $numddc1)
+self.$(id).update_groups(2, $valuet2, $numddc2)
+self.$(id).update_groups(3, $valuet3, $numddc3)
+self.$(id).update_groups(4, $valuet4, $numddc4)
 self.$(id).update_preamp($valuepa1, 1)
 self.$(id).update_preamp($valuepa2, 2)
 self.$(id).update_preamp($valuepa3, 3)
 self.$(id).update_preamp($valuepa4, 4)
-self.$(id).update_freq($valuef1, 1)
-self.$(id).update_freq($valuef2, 2)
-self.$(id).update_freq($valuef3, 3)
-self.$(id).update_freq($valuef4, 4)
+self.$(id).update_tuner_freq($valuetf1, 1, 1)
+self.$(id).update_tuner_freq($valuetf1, 1, 2)
+self.$(id).update_tuner_freq($valuetf2, 2, 1)
+self.$(id).update_tuner_freq($valuetf2, 2, 2)
+self.$(id).update_tuner_freq($valuetf3, 3, 1)
+self.$(id).update_tuner_freq($valuetf3, 3, 2)
+self.$(id).update_tuner_freq($valuetf4, 4, 1)
+self.$(id).update_tuner_freq($valuetf4, 4, 2)
+self.$(id).update_ddc_offset($valueg1d1f, 1, 1)
+self.$(id).update_ddc_offset($valueg1d2f, 1, 2)
+self.$(id).update_ddc_offset($valueg2d1f, 2, 1)
+self.$(id).update_ddc_offset($valueg2d2f, 2, 2)
+self.$(id).update_ddc_offset($valueg3d1f, 3, 1)
+self.$(id).update_ddc_offset($valueg3d2f, 3, 2)
+self.$(id).update_ddc_offset($valueg4d1f, 4, 1)
+self.$(id).update_ddc_offset($valueg4d2f, 4, 2)
 self.$(id).update_atten($valuea1, 1)
 self.$(id).update_atten($valuea2, 2)
 self.$(id).update_atten($valuea3, 3)
 self.$(id).update_atten($valuea4, 4)
-self.$(id).update_samprate($valuesr)
+self.$(id).update_samp_rate($valueg1d1sr, 1, 1)
+self.$(id).update_samp_rate($valueg1d2sr, 1, 2)
+self.$(id).update_samp_rate($valueg2d1sr, 2, 1)
+self.$(id).update_samp_rate($valueg2d2sr, 2, 2)
+self.$(id).update_samp_rate($valueg3d1sr, 3, 1)
+self.$(id).update_samp_rate($valueg3d2sr, 3, 2)
+self.$(id).update_samp_rate($valueg4d1sr, 4, 1)
+self.$(id).update_samp_rate($valueg4d2sr, 4, 2)
     </make>
-    <callback>update_freq($valuef1, 1)</callback>
-    <callback>update_freq($valuef2, 2)</callback>
-    <callback>update_freq($valuef3, 3)</callback>
-    <callback>update_freq($valuef4, 4)</callback>
+    <callback>update_tuner_freq($valuetf1, 1, 1)</callback>
+    <callback>update_tuner_freq($valuetf1, 1, 2)</callback>
+    <callback>update_tuner_freq($valuetf2, 2, 1)</callback>
+    <callback>update_tuner_freq($valuetf2, 2, 2)</callback>
+    <callback>update_tuner_freq($valuetf3, 3, 1)</callback>
+    <callback>update_tuner_freq($valuetf3, 3, 2)</callback>
+    <callback>update_tuner_freq($valuetf4, 4, 1)</callback>
+    <callback>update_tuner_freq($valuetf4, 4, 2)</callback>
+    <callback>update_ddc_offset($valueg1d1f, 1, 1)</callback>
+    <callback>update_ddc_offset($valueg1d2f, 1 , 2)</callback>
+    <callback>update_ddc_offset($valueg2d1f, 2 , 1)</callback>
+    <callback>update_ddc_offset($valueg2d2f, 2 , 2)</callback>
+    <callback>update_ddc_offset($valueg3d1f, 3 , 1)</callback>
+    <callback>update_ddc_offset($valueg3d2f, 3 , 2)</callback>
+    <callback>update_ddc_offset($valueg4d1f, 4 , 1)</callback>
+    <callback>update_ddc_offset($valueg4d2f, 4 , 2)</callback>
+    <callback>update_samp_rate($valueg1d1sr, 1, 1)</callback>
+    <callback>update_samp_rate($valueg1d2sr, 1, 2)</callback>
+    <callback>update_samp_rate($valueg2d1sr, 2, 1)</callback>
+    <callback>update_samp_rate($valueg2d2sr, 2, 2)</callback>
+    <callback>update_samp_rate($valueg3d1sr, 3, 1)</callback>
+    <callback>update_samp_rate($valueg3d2sr, 3, 2)</callback>
+    <callback>update_samp_rate($valueg4d1sr, 4, 1)</callback>
+    <callback>update_samp_rate($valueg4d2sr, 4, 2)</callback>
     <callback>update_atten($valuea1, 1)</callback>
     <callback>update_atten($valuea2, 2)</callback>
     <callback>update_atten($valuea3, 3)</callback>
     <callback>update_atten($valuea4, 4)</callback>
-    <callback>update_samprate($valuesr)</callback>
-    <callback>update_tuners($valuet1, 1)</callback>
-    <callback>update_tuners($valuet2, 2)</callback>
-    <callback>update_tuners($valuet3, 3)</callback>
-    <callback>update_tuners($valuet4, 4)</callback>
+    <callback>update_groups(1, $valuet1, $numddc1)</callback>
+    <callback>update_groups(2, $valuet2, $numddc2)</callback>
+    <callback>update_groups(3, $valuet3, $numddc3)</callback>
+    <callback>update_groups(4, $valuet4, $numddc4)</callback>
     <callback>update_preamp($valuepa1, 1)</callback>
     <callback>update_preamp($valuepa2, 2)</callback>
     <callback>update_preamp($valuepa3, 3)</callback>
@@ -56,6 +94,12 @@ self.$(id).update_samprate($valuesr)
         <type>string</type>
     </param>
     <param>
+        <name>Mnemonic Port</name>
+        <key>mne_port</key>
+        <value>8081</value>
+        <type>int</type>
+    </param>
+    <param>
         <name>Data Stream Port</name>
         <key>stream_port</key>
         <type>int</type>
@@ -73,245 +117,419 @@ self.$(id).update_samprate($valuesr)
         <type>bool</type>
     </param>
     <param>
-        <name>Sample Rate</name>
-        <key>valuesr</key>
-        <value>1000000</value>
-        <type>real</type>
+        <name>Num Output Groups</name>
+        <key>nchan</key>
+        <value>1</value>
+        <type>int</type>
+        <option>
+            <name>1</name>
+            <key>1</key>
+        </option>
+        <option>
+            <name>2</name>
+            <key>2</key>
+        </option>
+        <option>
+            <name>3</name>
+            <key>3</key>
+        </option>
+        <option>
+            <name>4</name>
+            <key>4</key>
+        </option>
+    </param>
+     <param>
+        <name>Group 1 Tuner</name>
+        <key>valuet1</key>
+        <value>1</value>
+        <type>int</type>
+        <option>
+            <name>1</name>
+            <key>1</key>
+        </option>
+        <option>
+            <name>2</name>
+            <key>2</key>
+        </option>
+        <option>
+            <name>3</name>
+            <key>3</key>
+        </option>
+        <option>
+            <name>4</name>
+            <key>4</key>
+        </option>
     </param>
     <param>
-		<name>Num Outputs</name>
-		<key>nchan</key>
-		<value>1</value>
-		<type>int</type>
-		<option>
-			<name>1</name>
-			<key>1</key>
-		</option>
-		<option>
-			<name>2</name>
-			<key>2</key>
-		</option>
-		<option>
-			<name>3</name>
-			<key>3</key>
-		</option>
-		<option>
-			<name>4</name>
-			<key>4</key>
-		</option>
+        <name>DDCs for Group 1</name>
+        <key>numddc1</key>
+        <value>1</value>
+        <type>int</type>
+        <option>
+            <name>1</name>
+            <key>1</key>
+        </option>
+        <option>
+            <name>2</name>
+            <key>2</key>
+        </option>
     </param>
-    <param>
-        <name>Output 1 Frequency</name>
-        <key>valuef1</key>
-        <value>100000000</value>
-        <type>real</type>
-    </param>
-    <param>
-        <name>Output 1 Attenuation</name>
+     <param>
+        <name>Group 1 Attenuation</name>
         <key>valuea1</key>
         <value>0</value>
         <type>real</type>
     </param>
-    <param>
-        <name>Output 1 Enable PreAmp</name>
+     <param>
+        <name>Group 1 Enable PreAmp</name>
         <key>valuepa1</key>
         <value>False</value>
         <type>bool</type>
     </param>
     <param>
-        <name>Output 1 Tuner</name>
-        <key>valuet1</key>
-        <value>1</value>
-		<type>int</type>
-		<option>
-			<name>1</name>
-			<key>1</key>
-		</option>
-		<option>
-			<name>2</name>
-			<key>2</key>
-		</option>
-		<option>
-			<name>3</name>
-			<key>3</key>
-		</option>
-		<option>
-			<name>4</name>
-			<key>4</key>
-		</option>
-    </param>
-    <param>
-        <name>Output 2 Frequency</name>
-        <key>valuef2</key>
+        <name>Group 1 Tuner Freq</name>
+        <key>valuetf1</key>
         <value>100000000</value>
         <type>real</type>
-        <hide>#if $nchan() > 1 then 'none' else 'all'#</hide>
     </param>
     <param>
-        <name>Output 2 Attenuation</name>
+        <name>Group 1 DDC 1 Offset</name>
+        <key>valueg1d1f</key>
+        <value>0</value>
+        <type>real</type>
+    </param>
+    <param>
+        <name>Group 1 DDC 1 SR</name>
+        <key>valueg1d1sr</key>
+        <value>10000000</value>
+        <type>real</type>
+    </param>
+    <param>
+        <name>Group 1 DDC 2 Offset</name>
+        <key>valueg1d2f</key>
+        <value>0</value>
+        <type>real</type>
+        <hide>#if $numddc1() > 1 then 'none' else 'all'#</hide>
+    </param>
+    <param>
+        <name>Group 1 DDC 2 SR</name>
+        <key>valueg1d2sr</key>
+        <value>10000000</value>
+        <type>real</type>
+        <hide>#if $numddc1() > 1 then 'none' else 'all'#</hide>
+    </param>  
+    <param>
+        <name>Group 2 Tuner</name>
+        <key>valuet2</key>
+        <value>2</value>
+        <type>int</type>
+        <hide>#if $nchan() > 1 then 'none' else 'all'#</hide>
+        <option>
+            <name>1</name>
+            <key>1</key>
+        </option>
+        <option>
+            <name>2</name>
+            <key>2</key>
+        </option>
+        <option>
+            <name>3</name>
+            <key>3</key>
+        </option>
+        <option>
+            <name>4</name>
+            <key>4</key>
+        </option>
+    </param>
+    <param>
+        <name>DDCs for Group 2</name>
+        <key>numddc2</key>
+        <value>1</value>
+        <type>int</type>
+        <hide>#if $nchan() > 1 then 'none' else 'all'#</hide>
+        <option>
+            <name>1</name>
+            <key>1</key>
+        </option>
+        <option>
+            <name>2</name>
+            <key>2</key>
+        </option>
+    </param>
+    <param>
+        <name>Group 2 Attenuation</name>
         <key>valuea2</key>
         <value>0</value>
         <type>real</type>
         <hide>#if $nchan() > 1 then 'none' else 'all'#</hide>
     </param>
     <param>
-        <name>Output 2 Enable PreAmp</name>
+        <name>Group 2 Enable PreAmp</name>
         <key>valuepa2</key>
         <value>False</value>
         <type>bool</type>
          <hide>#if $nchan() > 1 then 'none' else 'all'#</hide>
     </param>
     <param>
-        <name>Output 2 Tuner</name>
-        <key>valuet2</key>
-        <value>2</value>
-		<type>int</type>
-        <hide>#if $nchan() > 1 then 'none' else 'all'#</hide>
-		<option>
-			<name>1</name>
-			<key>1</key>
-		</option>
-		<option>
-			<name>2</name>
-			<key>2</key>
-		</option>
-		<option>
-			<name>3</name>
-			<key>3</key>
-		</option>
-		<option>
-			<name>4</name>
-			<key>4</key>
-		</option>
-    </param>
-    <param>
-        <name>Output 3 Frequency</name>
-        <key>valuef3</key>
+        <name>Group 2 Tuner Freq</name>
+        <key>valuetf2</key>
         <value>100000000</value>
         <type>real</type>
-        <hide>#if $nchan() > 2 then 'none' else 'all'#</hide>
+        <hide>#if $nchan() > 1 then 'none' else 'all'#</hide>
     </param>
     <param>
-        <name>Output 3 Attenuation</name>
+        <name>Group 2  DDC 1 Offset</name>
+        <key>valueg2d1f</key>
+        <value>0</value>
+        <type>real</type>
+        <hide>#if $nchan() > 1 then 'none' else 'all'#</hide>
+    </param>
+    <param>
+        <name>Group 2 DDC 1 SR</name>
+        <key>valueg2d1sr</key>
+        <value>10000000</value>
+        <type>real</type>
+        <hide>#if $nchan() > 1 then 'none' else 'all'#</hide>
+    </param>
+    <param>
+        <name>Group 2 DDC 2 Offset</name>
+        <key>valueg2d2f</key>
+        <value>0</value>
+        <type>real</type>
+        <hide>#if $numddc2() > 1 and $nchan() > 1 then 'none' else 'all'#</hide>
+    </param>
+    <param>
+        <name>Group 2 DDC 2 SR</name>
+        <key>valueg2d2sr</key>
+        <value>10000000</value>
+        <type>real</type>
+        <hide>#if $numddc2() > 1 and $nchan() > 1 then 'none' else 'all'#</hide>
+    </param> 
+    <param>
+        <name>Group 3 Tuner</name>
+        <key>valuet3</key>
+        <value>3</value>
+        <type>int</type>
+        <hide>#if $nchan() > 2 then 'none' else 'all'#</hide>
+        <option>
+            <name>1</name>
+            <key>1</key>
+        </option>
+        <option>
+            <name>2</name>
+            <key>2</key>
+        </option>
+        <option>
+            <name>3</name>
+            <key>3</key>
+        </option>
+        <option>
+            <name>4</name>
+            <key>4</key>
+        </option>
+    </param>
+    <param>
+        <name>DDCs for Group 3</name>
+        <key>numddc3</key>
+        <value>1</value>
+        <type>int</type>
+        <hide>#if $nchan() > 2 then 'none' else 'all'#</hide>
+        <option>
+            <name>1</name>
+            <key>1</key>
+        </option>
+        <option>
+            <name>2</name>
+            <key>2</key>
+        </option>
+    </param>
+    <param>
+        <name>Group 3 Attenuation</name>
         <key>valuea3</key>
         <value>0</value>
         <type>real</type>
         <hide>#if $nchan() > 2 then 'none' else 'all'#</hide>
     </param>
     <param>
-        <name>Output 3 Enable PreAmp</name>
+        <name>Group 3 Enable PreAmp</name>
         <key>valuepa3</key>
         <value>False</value>
         <type>bool</type>
          <hide>#if $nchan() > 2 then 'none' else 'all'#</hide>
     </param>
     <param>
-        <name>Output 3 Tuner</name>
-        <key>valuet3</key>
-        <value>3</value>
-		<type>int</type>
-        <hide>#if $nchan() > 2 then 'none' else 'all'#</hide>
-		<option>
-			<name>1</name>
-			<key>1</key>
-		</option>
-		<option>
-			<name>2</name>
-			<key>2</key>
-		</option>
-		<option>
-			<name>3</name>
-			<key>3</key>
-		</option>
-		<option>
-			<name>4</name>
-			<key>4</key>
-		</option>
-    </param>
-    <param>
-        <name>Output 4 Frequency</name>
-        <key>valuef4</key>
+        <name>Group 3 Tuner Freq</name>
+        <key>valuetf3</key>
         <value>100000000</value>
         <type>real</type>
-        <hide>#if $nchan() > 3 then 'none' else 'all'#</hide>
+        <hide>#if $nchan() > 2 then 'none' else 'all'#</hide>
     </param>
     <param>
-        <name>Output 4 Attenuation</name>
+        <name>Group 3  DDC 1 Offset</name>
+        <key>valueg3d1f</key>
+        <value>0</value>
+        <type>real</type>
+        <hide>#if $nchan() > 2 then 'none' else 'all'#</hide>
+    </param>
+    <param>
+        <name>Group 3 DDC 1 SR</name>
+        <key>valueg3d1sr</key>
+        <value>10000000</value>
+        <type>real</type>
+        <hide>#if $nchan() > 2 then 'none' else 'all'#</hide>
+    </param>
+    <param>
+        <name>Group 3 DDC 2 Offset</name>
+        <key>valueg3d2f</key>
+        <value>0</value>
+        <type>real</type>
+        <hide>#if $numddc3() > 1 and $nchan() > 2 then 'none' else 'all'#</hide>
+    </param>
+    <param>
+        <name>Group 3 DDC 2 SR</name>
+        <key>valueg3d2sr</key>
+        <value>10000000</value>
+        <type>real</type>
+        <hide>#if $numddc3() > 1 and $nchan() > 2 then 'none' else 'all'#</hide>
+    </param>
+    <param>
+        <name>Group 4 Tuner</name>
+        <key>valuet4</key>
+        <value>3</value>
+        <type>int</type>
+        <hide>#if $nchan() > 3 then 'none' else 'all'#</hide>
+        <option>
+            <name>1</name>
+            <key>1</key>
+        </option>
+        <option>
+            <name>2</name>
+            <key>2</key>
+        </option>
+        <option>
+            <name>3</name>
+            <key>3</key>
+        </option>
+        <option>
+            <name>4</name>
+            <key>4</key>
+        </option>
+    </param>
+    <param>
+        <name>DDCs for Group 4</name>
+        <key>numddc4</key>
+        <value>1</value>
+        <type>int</type>
+        <hide>#if $nchan() > 3 then 'none' else 'all'#</hide>
+        <option>
+            <name>1</name>
+            <key>1</key>
+        </option>
+        <option>
+            <name>2</name>
+            <key>2</key>
+        </option>
+    </param>
+    <param>
+        <name>Group 4 Attenuation</name>
         <key>valuea4</key>
         <value>0</value>
         <type>real</type>
         <hide>#if $nchan() > 3 then 'none' else 'all'#</hide>
     </param>
     <param>
-        <name>Output 4 Enable PreAmp</name>
+        <name>Group 4 Enable PreAmp</name>
         <key>valuepa4</key>
         <value>False</value>
         <type>bool</type>
          <hide>#if $nchan() > 3 then 'none' else 'all'#</hide>
     </param>
     <param>
-        <name>Output 4 Tuner</name>
-        <key>valuet4</key>
-        <value>4</value>
-		<type>int</type>
+        <name>Group 4 Tuner Frequency</name>
+        <key>valuetf4</key>
+        <value>100000000</value>
+        <type>real</type>
         <hide>#if $nchan() > 3 then 'none' else 'all'#</hide>
-		<option>
-			<name>1</name>
-			<key>1</key>
-		</option>
-		<option>
-			<name>2</name>
-			<key>2</key>
-		</option>
-		<option>
-			<name>3</name>
-			<key>3</key>
-		</option>
-		<option>
-			<name>4</name>
-			<key>4</key>
-		</option>
     </param>
-    <check> (64000000 >= $valuesr  >= 977) or $valuesr ==128000000 </check>
+    <param>
+        <name>Group 4  DDC 1 Offset</name>
+        <key>valueg4d1f</key>
+        <value>0</value>
+        <type>real</type>
+        <hide>#if $nchan() > 3 then 'none' else 'all'#</hide>
+    </param>
+    <param>
+        <name>Group 4 DDC 1 SR</name>
+        <key>valueg4d1sr</key>
+        <value>10000000</value>
+        <type>real</type>
+        <hide>#if $nchan() > 3 then 'none' else 'all'#</hide>
+    </param>
+    <param>
+        <name>Group 4 DDC 2 Offset</name>
+        <key>valueg4d2f</key>
+        <value>0</value>
+        <type>real</type>
+        <hide>#if $numddc4() > 1 and $nchan() > 3 then 'none' else 'all'#</hide>
+    </param>
+    <param>
+        <name>Group 4 DDC 2 SR</name>
+        <key>valueg4d2sr</key>
+        <value>10000000</value>
+        <type>real</type>
+        <hide>#if $numddc4() > 1 and $nchan() > 3 then 'none' else 'all'#</hide>
+    </param>
+    <check>64000000>=$valueg1d1f>=-64000000</check>
+    <check>64000000>=$valueg1d2f>=-64000000</check>
+    <check>64000000>=$valueg2d1f>=-64000000</check>
+    <check>64000000>=$valueg2d2f>=-64000000</check>
+    <check>64000000>=$valueg3d1f>=-64000000</check>
+    <check>64000000>=$valueg3d2f>=-64000000</check>
+    <check>64000000>=$valueg4d1f>=-64000000</check>
+    <check>64000000>=$valueg4d2f>=-64000000</check>
+    <check> (64000000 >= $valueg1d1sr  >= 977) or $valueg1d1sr ==128000000 </check>
+    <check> (64000000 >= $valueg1d2sr  >= 977) or $valueg1d2sr ==128000000 </check>
+    <check> (64000000 >= $valueg2d1sr  >= 977) or $valueg2d1sr ==128000000 </check>
+    <check> (64000000 >= $valueg2d2sr  >= 977) or $valueg2d2sr ==128000000 </check>
+    <check> (64000000 >= $valueg3d1sr  >= 977) or $valueg3d1sr ==128000000 </check>
+    <check> (64000000 >= $valueg3d2sr  >= 977) or $valueg3d2sr ==128000000 </check>
+    <check> (64000000 >= $valueg4d1sr  >= 977) or $valueg4d1sr ==128000000 </check>
+    <check> (64000000 >= $valueg4d2sr  >= 977) or $valueg4d2sr ==128000000 </check>
+    <check>6200000000>=$valuetf1>=2000000</check>
+    <check>6200000000>=$valuetf2>=2000000</check>
+    <check>6200000000>=$valuetf3>=2000000</check>
+    <check>6200000000>=$valuetf4>=2000000</check>
     <check>4>=$nchan>=1</check>
-    <check>6200000000>=$valuef1>=2000000</check>
-    <check>6200000000>=$valuef2>=2000000</check>
-    <check>6200000000>=$valuef3>=2000000</check>
-    <check>6200000000>=$valuef4>=2000000</check>
-    <check>64>=$valuea1>=0</check>
-    <check>64>=$valuea2>=0</check>
-    <check>64>=$valuea3>=0</check>
-    <check>64>=$valuea4>=0</check>
+    <check>46>=$valuea1>=0</check>
+    <check>46>=$valuea2>=0</check>
+    <check>46>=$valuea3>=0</check>
+    <check>46>=$valuea4>=0</check>
     <check>4>=$valuet1>=1</check>
     <check>4>=$valuet2>=1</check>
     <check>4>=$valuet3>=1</check>
     <check>4>=$valuet4>=1</check>
     <source>
-		<name>out</name>
-		<type>complex</type>
-		<nports>$nchan</nports>
-	</source>
+        <name>out</name>
+        <type>complex</type>
+        <nports>($numddc1+((($nchan/2)-($nchan/4)) * $numddc2)+(($nchan/3)*$numddc3)+(($nchan/4) * $numddc4))</nports>
+    </source>
     <doc>
-    This block will allow you to stream data from the Polaris radio.  
+This block will allow you to stream data from the Polaris radio over a 10 Gig connection.
 
-    Parameters:
-
-    Polaris Command IP : The TCP connection for command and control.  
-    Polaris 10 Gig IP : The ip of the 10gig connection on the unit.  
-    Machine 10 Gig IP : The IP of the destination of the data packets.
-    Data Stream Port : The port the UDP data is coming in on.
-
-    Independent Operation : Allows each tuner to operate indepenently or as a group.
-
-    Sample Rate : The sample rate for all active output tuners.  
-        Accepts .000977 - 64 MHz in 1 Hz resolution or 128 MHz.
-
-    Num Outputs : Total number of GNU radio outputs.
-
-    Each output has a Frequency, Attenuation, PreAmp, and Tuner tabs that accept values. 
-            Frequency : Accepts  2 - 6200 MHz.
-            Attenuation : Accepts  0 dB to 46 dB.
+Parameters:
+      Polaris Command IP : The TCP connection for command and control.  
+      Polaris 10 Gig IP : The ip of the 10gig connection on the unit.  
+      Machine 10 Gig IP : The IP of the destination of the data packets.
+      Mnemonic Port : The port the Polaris is running mnemonic app on.
+      Data Stream Port : The port the UDP data is coming in on.
+      Independent Operation : Allows each tuner to operate indepenently or as a group.
+      Num Output Group : Number of output groups you want.  Each group has 2 DDCs.
+      Each output group has a Frequency, Attenuation, PreAmp, Number of DDCs, and Tuner tabs that accept values.
+            Group Tuner : Choose what RF inputs you are plugged into for that output.
+            Attenuation : Accepts  0 dB to 46 dB. 
             PreAmp : Choose to enable or diable the preamp on this output.
-            Output Tuner : Choose what RF inputs you are plugged into for that output.
+            Tuner Frequency : Accepts  2,000,000 Hz to 6,200,000,000 Hz in 1,000,000 Hz steps.
+            DDC Offset : Offset from the tuner frequency. : Accepts -64,000,000 Hz to 64,000,000 Hz in 1 Hz steps.
+            Sample Rate : The sample rate for the DDC : Accepts 977 Hz to 64,000,000 Hz in 1 Hz resolution or 128,000,000 Hz.
     </doc>
 </block>

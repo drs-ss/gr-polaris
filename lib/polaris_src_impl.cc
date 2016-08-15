@@ -43,13 +43,14 @@ namespace polaris
  * @return POLSRC::sptr 
  */
 polaris_src::sptr
-polaris_src::make(std::string ip, int port, std::string streamip,
-                  std::string fibip, int num_outputs, bool i_op, 
-                  int phys)
+polaris_src::make(std::string ip, int port, int mne_port, 
+                  std::string streamip, std::string fibip, 
+                  int num_outputs, int num_groups, 
+                  bool i_op, int phys)
 {
     return gnuradio::get_initial_sptr
-           (new polaris_src_impl(ip, streamip, fibip, port, 
-                                 num_outputs, i_op, phys));
+           (new polaris_src_impl(ip, streamip, fibip, port, mne_port,
+                               num_outputs, num_groups, i_op, phys));
 }
 
 /**
@@ -59,7 +60,9 @@ polaris_src_impl::polaris_src_impl(std::string ip,
                                    std::string streamip, 
                                    std::string fibip, 
                                    int port, 
-                                   int num_outputs, 
+                                   int mne_port,
+                                   int num_outputs,
+                                   int num_groups, 
                                    bool independent_operation, 
                                    int phys)
     : gr::sync_block("POLSRC",
@@ -70,23 +73,35 @@ polaris_src_impl::polaris_src_impl(std::string ip,
 {
     m_i_op = independent_operation;
     m_num_output_streams = num_outputs;
+    m_num_output_groups = num_groups;
     m_address = ip;
     m_stream_address = streamip;
     m_rec_port = port;
-    m_port = TCP_PORT;
+    m_mne_port = mne_port;
     m_fiber_address = fibip;
 
-    m_samp_rate = DEFAULT_SAMP_RATE;
-    m_freqs.reset(new double[m_num_output_streams]);
-    m_attens.reset(new double[m_num_output_streams]);
-    m_tuners.reset(new int[m_num_output_streams]);
-    m_preamps.reset(new bool[m_num_output_streams]);
+    m_tuners.reset(new int[MAX_STREAMS]);
+    m_group_data.reset(new group_data_struct[m_num_output_groups]);
+    std::stringstream s;
 
-    for (int i = 0; i < m_num_output_streams; i++) {
-        m_freqs[i] = DEFAULT_FREQ;
-        m_attens[i] = 0;
+    for (int i = 0; i < m_num_output_groups; i++) {
+        m_group_data[i].num_ddcs = 0;
+        m_group_data[i].ddc_freq[0] = 0;
+        m_group_data[i].ddc_freq[1] = 0;
+        m_group_data[i].ddc_sr[0] = 0;
+        m_group_data[i].ddc_sr[1] = 0;
+        m_group_data[i].tuner_freq = 0;
+        m_group_data[i].atten = 0;
+        m_group_data[i].tuner = -1;
+        m_group_data[i].preamp = false;
+        m_group_data[i].active = false;
+        m_group_data[i].sr_ind[0] = -1;
+        m_group_data[i].sr_ind[1] = -1;
+    }
+
+    for (int i = 0; i < MAX_STREAMS; i++) {
         m_tuners[i] = -1;
-        m_preamps[i] = false;
+        m_sample_rates[i] = 0;
     }
 
     m_phys_port = phys;
@@ -96,9 +111,14 @@ polaris_src_impl::polaris_src_impl(std::string ip,
         m_phys_port = 0;
     }
 
-    // Begin network setup.
+    m_sr_index =0;
+    m_tuner_index = 0;
+
+    // Setup the Polaris...
     try_connect();
-    send_message(DISABLE_OUTPUT_MNE, -1);
+    if (m_connected) {
+        setup_polaris();
+    }
 }
 
 /**
@@ -106,7 +126,6 @@ polaris_src_impl::polaris_src_impl(std::string ip,
  */
 polaris_src_impl::~polaris_src_impl()
 {
-    close(m_sock);
 }
 
 bool 
@@ -119,7 +138,8 @@ polaris_src_impl::start()
             m_complex_manager->update_tuners(m_tuners.get(), 
                                               m_num_output_streams);
             // Enable data streams.
-            send_message(ENABLE_OUTPUT_MNE, -1);
+            std::stringstream s;
+            SEND_STR(s, TOGGLE_STREAMING_CMD(0));
         }
     } catch (std::exception &e) {
         std::cout << e.what() << std::endl;
@@ -131,7 +151,8 @@ bool
 polaris_src_impl::stop()
 {
     // Tell the POLARIS to stop transmitting
-    send_message("RCH0;STE1,1,0;STE2,1,0;STE3,1,0;STE4,1,0;CFG0",-1);
+    std::stringstream s;
+    SEND_STR(s, SHUTDOWN_STREAMING_CMD); 
     if (m_complex_manager) {
         m_complex_manager->stop();
     }
@@ -141,146 +162,298 @@ polaris_src_impl::stop()
 void 
 polaris_src_impl::try_connect()
 {
-    std::cout << "Attempting to connect to Polaris..." << std::endl;
-    // Let's attempt to establish a TCP connection to POLARIS
-    m_connected = connect_polaris(m_address, m_port);
+    m_connected = false;
+    std::string s_port = (boost::format("%d") % m_mne_port).str();
+    if (m_address.size() > 0) {
+        try {
+            std::cout << "Attempting to connect to the Polaris..."
+                    << std::endl;
+            boost::asio::ip::tcp::resolver resolver(
+                    m_mne_io_service);
+            boost::asio::ip::tcp::resolver::query query(m_address,
+                    s_port,
+                    boost::asio::ip::resolver_query_base::passive);
+            boost::asio::ip::tcp::resolver::iterator ter =
+                    resolver.resolve(query);
+
+            m_mne_socket.reset(
+                    new boost::asio::ip::tcp::socket(
+                            m_mne_io_service));
+
+            boost::asio::connect(*m_mne_socket, ter);
+
+            boost::asio::socket_base::reuse_address roption(
+                    true);
+            m_mne_socket->set_option(roption);
+
+            m_connected = true;
+            std::cout << "Connected." << std::endl;
+        } catch (std::exception &e) {
+            std::cout << "Failed to establish connection: "
+                    << std::endl << e.what() << std::endl;
+        }
+    } else {
+        std::cout << "Please enter an IP address for the Polaris."
+                << std::endl;
+    }
 }
 
 void 
-polaris_src_impl::set_freq(double freq, int stream)
+polaris_src_impl::set_tuner_freq(double freq, int group, int ddc)
 {
+    std::ostringstream s;
     if (m_connected) {
-        if (stream > 0 && stream <= m_num_output_streams) {
+        if (group > 0 && group <= m_num_output_groups) {
             int tuner;
-            m_freqs[stream - 1] = freq;
-            tuner = m_tuners[stream - 1];
+            m_group_data[group - 1].tuner_freq = freq;
+            tuner = m_group_data[group - 1].tuner;
 
-            if (tuner < 0) return;
+            if (tuner < 0) 
+                return;
 
-            freq = freq / MHZ_SCALE;
+            if (freq) {
+                freq = freq / MHZ_SCALE;
+                if (freq >= MIN_FREQ_MHZ && freq <= MAX_FREQ_MHZ) {
+                    std::stringstream s;
+                    SEND_STR(s, TUNER_FREQUENCY_CMD(tuner,ddc,freq));
+                }else{
+                    std::cout << "Please select a frequency between"<<
+                        " " << MIN_FREQ_MHZ << "MHz and " <<
+                        MAX_FREQ_MHZ << "MHz." << std::endl;
+                }
+            }
+        }
+    }
+}
+
+void
+polaris_src_impl::set_ddc_offset(double offset, int group, int ddc)
+{
+    std::stringstream s;
+    if (m_connected) {
+        if (group > 0 && group <= m_num_output_streams) {
+            int tuner;
+            tuner = m_group_data[group - 1].tuner;
+
+            if (tuner < 0)
+                return;
+
             std::ostringstream s;
-            if (freq >= MIN_FREQ_MHZ && freq <= MAX_FREQ_MHZ) {
-                s.str("");
-                s << FRQ_MNE(tuner, 1, freq);
-                send_message(s.str(), -1);
+            if (offset>= -MAX_DDC_OFFSET && offset<= MAX_DDC_OFFSET){
+                double off = offset/MHZ_SCALE;
+                SEND_STR(s, DDC_FREQUENCY_CMD(tuner,ddc,off));
+            }else{
+                std::cout << "Please select a DDC offset between" <<
+                    " " << (-MAX_DDC_OFFSET) << "MHz and " <<
+                    MAX_DDC_OFFSET << "MHz." << std::endl;
             }
         }
     }
 }
 
 void 
-polaris_src_impl::set_atten(double atten, int stream)
+polaris_src_impl::set_atten(double atten, int group)
 {
     if (m_connected) {
-        if (stream > 0 && stream <= m_num_output_streams) {
+        if (group > 0 && group <= m_num_output_groups) {
             int tuner;
-            m_attens[stream - 1] = atten;
-            tuner = m_tuners[stream - 1];
+            m_group_data[group - 1].atten = atten;
+            tuner = m_group_data[group - 1].tuner;
 
-            if (tuner < 0) return;
+            if (tuner < 0) 
+                return;
 
             if (atten >= MIN_ATTEN && atten <= MAX_ATTEN) {
-                std::ostringstream s;
-                s.str("");
-                s << ATN_MNE(tuner, atten);
-                send_message(s.str(), -1);
+                std::stringstream s;
+                SEND_STR(s, ATTENUATION_CMD(tuner,atten));
+            }else{
+                std::cout << "Please select an attenuation" <<
+                    " value between " << MIN_ATTEN << "dB " <<
+                    " and " << MAX_ATTEN << "dB." << std::endl;
             }
         }
     }
 }
 
 void 
-polaris_src_impl::set_tuner(int tuner, int stream)
+polaris_src_impl::set_tuner(int tuner, int group, int num_ddcs)
 {
     if (m_connected) {
-        if (stream > 0 && stream <= m_num_output_streams) {
-            m_tuners[stream - 1] = tuner;
+        if (group > 0 && group <= m_num_output_groups) {
+            if (tuner == 1) {
+                m_tuners[m_tuner_index] = 1;
+                m_tuner_index++;
+                if (num_ddcs > 1) {
+                    m_tuners[m_tuner_index] = 2;
+                    m_tuner_index++;
+                }
+            }
+            if (tuner == 2) {
+                m_tuners[m_tuner_index] = 3;
+                m_tuner_index++;
+                if (num_ddcs > 1) {
+                    m_tuners[m_tuner_index] = 4;
+                    m_tuner_index++;
+                }
+            }
+            if (tuner == 3) {
+                m_tuners[m_tuner_index] = 5;
+                m_tuner_index++;
+                if (num_ddcs > 1) {
+                    m_tuners[m_tuner_index] = 6;
+                    m_tuner_index++;
+                }
+            }
+            if (tuner == 4) {
+                m_tuners[m_tuner_index] = 7;
+                m_tuner_index++;
+                if (num_ddcs > 1) {
+                    m_tuners[m_tuner_index] = 8;
+                    m_tuner_index++;
+                }
+            }
+            m_group_data[group - 1].tuner = tuner;
+            m_group_data[group - 1].num_ddcs = num_ddcs;
         }
     }
 }
 
-void 
-polaris_src_impl::update_preamp(bool pam, int stream)
+void
+polaris_src_impl::set_samp_rate(double sr, int group, int ddc)
 {
-    if (stream > 0 && stream <= m_num_output_streams) {
-        m_preamps[stream - 1] = pam;
-        if (m_tuners[stream - 1] > 0) {
+    std::stringstream s;
+    SEND_STR(s, TOGGLE_STREAMING_CMD(1));
+
+    if (m_connected) {
+        if (group > 0 && group <= m_num_output_groups) {
+            int tuner;
+            tuner = m_group_data[group - 1].tuner;
+            m_group_data[group-1].ddc_sr[ddc-1]=sr;
+            if (m_group_data[group-1].sr_ind[ddc-1] < 0) {
+                m_group_data[group-1].sr_ind[ddc-1] = m_sr_index;
+                m_sr_index++;
+            }
+            if (tuner < 0) return;
+
+            sr = sr / MHZ_SCALE;
+            if (sr >= MIN_SAMP_RATE_MHZ && sr <= MAX_SAMP_RATE_MHZ) {
+                SEND_STR(s, SAMPLE_RATE_CMD(tuner, ddc, sr));
+            }else{
+                std::cout << "Please select a sample rate " <<
+                    "between " << MIN_SAMP_RATE_MHZ << "MHz"<<
+                    " and " << MAX_SAMP_RATE_MHZ << "MHz."  <<
+                    std::endl;
+            }
+        }
+    }
+
+    SEND_STR(s, TOGGLE_STREAMING_CMD(0));
+}
+
+void 
+polaris_src_impl::update_preamp(bool pam, int group)
+{
+    if (group > 0 && group <= m_num_output_groups) {
+        m_group_data[group - 1].preamp = pam;
+        int tuner = m_group_data[group - 1].tuner;
+        if (tuner > 0) {
             std::stringstream s;
-            s << PAM_MNE(m_tuners[stream - 1], (pam ? 1 : 0));
-            send_message(s.str(), -1);
+            SEND_STR(s, PREAMP_CMD(tuner, (pam ? 1 : 0)));
         }
     }
 }
 
 void 
-polaris_src_impl::update_tuners(int tuner, int stream)
+polaris_src_impl::update_groups(int group, int tuner, int num_ddcs)
 {
-    
-    if (stream > m_num_output_streams) {
+    if (group > m_num_output_groups) {
         tuner = -1;
     }
-    if (tuner > 0 && stream <= m_num_output_streams) {
-        for (int i = 0; i < m_num_output_streams; i++) {
-            if (tuner == m_tuners[i] && (i + 1) != stream) {
+
+    if (tuner > 0 && group <= m_num_output_groups) {
+        for (int i = 0; i < m_num_output_groups; i++) {
+            if (tuner == m_group_data[i].tuner && (i + 1) != group) {
                 std::cout << "No two tuners may match. "
                              "Another tuner is already set to "
                              << tuner << std::endl;
+                m_group_data[i].active = false;
+                m_tuners[i] = -1;
                 return;
+            }else{
+                m_group_data[i].active = true;
+            }
+        }      
+        set_tuner(tuner, group, num_ddcs);
+    }
+    for (int i = 1; i <= NUM_TUNERS; i++) {
+        for (int j = 0; j < m_num_output_groups; j++) {
+            if (m_group_data[j].tuner == i) {
+                update_atten(
+                    m_group_data[j].atten, group);
+                update_tuner_freq(
+                    m_group_data[j].tuner_freq,group,1);
+                update_tuner_freq(
+                    m_group_data[j].tuner_freq,group,2);
+                update_ddc_offset(
+                    m_group_data[j].ddc_freq[0],group,1);
+                update_ddc_offset(
+                    m_group_data[j].ddc_freq[1],group,2);
+                update_preamp(
+                    m_group_data[j].preamp,group);
             }
         }
     }
-    send_message(DISABLE_OUTPUT_MNE, -1);
-    set_tuner(tuner, stream);
+    start_active_groups(); 
+}
 
+void
+polaris_src_impl::start_active_groups()
+{
     std::stringstream s;
-    s << STE_MNE(1,1,0) << STE_MNE(2,1,0) << STE_MNE(3,1,0) << STE_MNE(4,1,0);
-    send_message(s.str(), -1);
-    for (int i = 1; i <= 4; i++) {
-        for (int j = 0; j < m_num_output_streams; j++) {
-            if (m_tuners[j] == i) {
-                s.str("");
-                s << STE_MNE(i, 1, 1);
-                send_message(s.str(), -1);
-                update_atten(m_attens[j],j + 1);
-                update_freq(m_freqs[j],j + 1);
-                update_preamp(m_preamps[j],j + 1);
-            }
-        }
+
+    // Turn off all streams 
+    SEND_STR(s, TOGGLE_STREAMING_CMD(1));
+    SEND_STR(s, SHUTDOWN_STREAMING_CMD); 
+    for (int i = 0 ; i < m_num_output_groups; i++) {
+        if (m_group_data[i].active == true
+              && m_group_data[i].tuner > 0) {
+              SEND_STR(s, DATA_STREAM_CMD(m_group_data[i].tuner,1,1));
+              if (m_group_data[i].num_ddcs > 1) {
+                  SEND_STR(s, DATA_STREAM_CMD(m_group_data[i].tuner, 
+                                              2, 1));
+              }
+        }   
     }
 
     if (m_complex_manager) {
         m_complex_manager->update_tuners(m_tuners.get(),
-                                          m_num_output_streams);
+                                         m_num_output_streams);
     }
-    send_message(ENABLE_OUTPUT_MNE, -1);
+    SEND_STR(s, TOGGLE_STREAMING_CMD(0));
 }
 
 void 
-polaris_src_impl::update_freq(double freq, int stream)
+polaris_src_impl::update_tuner_freq(double freq, int group, int ddc)
 {
-    set_freq(freq, stream);
+    set_tuner_freq(freq, group, ddc);
+}
+
+void
+polaris_src_impl::update_ddc_offset(double offset, int group, int ddc)
+{
+    set_ddc_offset(offset, group, ddc);
 }
 
 void 
-polaris_src_impl::update_samprate(double sr)
+polaris_src_impl::update_samp_rate(double sr, int group, int ddc)
 {
-    send_message(DISABLE_OUTPUT_MNE, -1);
-    sr = sr / 1000000;
-    std::ostringstream s;
-    for (int i = 1; i <= NUM_STREAMS; i++) {
-        if (sr >= MIN_SAMP_RATE_MHZ && sr <= MAX_SAMP_RATE_MHZ) {
-            s.str("");
-            s << SPR_MNE(i, 1, sr);
-            send_message(s.str(), -1);
-        }
-    }
-    send_message(ENABLE_OUTPUT_MNE, -1);
+    set_samp_rate(sr, group, ddc);
 }
 
 void 
-polaris_src_impl::update_atten(double atten, int stream)
+polaris_src_impl::update_atten(double atten, int group)
 {
-    set_atten(atten, stream);
+    set_atten(atten, group);
 }
 
 void
@@ -300,11 +473,19 @@ polaris_src_impl::work(int noutput_items,
         // No TCP connection was established.  Don't do anything.
         return 0;
     } else {
+        for (int i = 0; i < m_num_output_streams; i++) {
+            m_sample_rates[i] = noutput_items; 
+        }
+
         // Request the ComplexManager fill our buffers
-        int num_copied = m_complex_manager->fill_buffers(
-            output_items, m_tuners.get(), noutput_items);
+        m_complex_manager->fill_buffers(
+             output_items, m_tuners.get(), m_sample_rates);
         // Return how many values we were able to get for GNURadio.
-        return num_copied;
+        // Call 1 produce per stream         
+        for (int i = 0; i < m_num_output_streams; i++) {
+             produce(i, m_sample_rates[i]);
+        }
+        return WORK_CALLED_PRODUCE;    
     }
 }
 
@@ -317,23 +498,12 @@ polaris_src_impl::work(int noutput_items,
  * 
  * @return bool 
  */
-bool 
-polaris_src_impl::connect_polaris(std::string ip, int port)
+void 
+polaris_src_impl::setup_polaris()
 {
-    m_sock = socket(AF_INET, SOCK_STREAM, 0);
-    if (m_sock < 0) {
-        std::cout << "TCP Connection Failed" << std::endl;
-        return false;
+    if (!m_connected) {
+        return;
     }
-    m_server.sin_addr.s_addr = inet_addr(ip.c_str());
-    m_server.sin_family = AF_INET;
-    m_server.sin_port = htons(port);
-    if (connect(m_sock, (struct sockaddr *)&m_server, sizeof(m_server))
-         < 0) {
-        std::cout << "TCP Connection Failed" << std::endl;
-        return false;
-    }
-    std::cout << "Connection Established" << std::endl;
     std::cout << "Setting up POLARIS..." << std::endl;
     /*
     This loop will setup the requested networking, 
@@ -341,49 +511,29 @@ polaris_src_impl::connect_polaris(std::string ip, int port)
     to independent operation if requested. 
     */
     std::stringstream s;
-    s << CFG_MNE(1);
-    send_message(s.str(), -1);
-    for (int i = 1; i <= 4; i++) {
-        for (int j = 1; j <= 2; j++) {
-            s.str("");
-            s << UDP_MNE(i,j,m_stream_address,m_rec_port,"FF:FF:FF:FF:FF:FF");
-            send_message(s.str(), -1);
-            s.str("");
-            s << SIP_MNE(i,j,m_fiber_address,m_rec_port,"FF:FF:FF:FF:FF:FF");
-            send_message(s.str(), -1);
-            s.str("");
-            s << STE_MNE(i, 1, 0);
-            send_message(s.str(), -1);
+    SEND_STR(s, CONFIG_MODE_CMD(1));
+    for (int i = 1; i <= NUM_TUNERS; i++) {
+        for (int j = 1; j <= DDC_PER_TUNER; j++) {
+            SEND_STR(s, STREAM_SRC_CMD(i, j, m_stream_address,
+                         m_rec_port,"FF:FF:FF:FF:FF:FF"));
+            SEND_STR(s, STREAM_DEST_CMD(i, j,
+                         m_fiber_address,m_rec_port,
+                         "FF:FF:FF:FF:FF:FF"));
+            SEND_STR(s, DATA_STREAM_CMD(i, 1, 0));
+            SEND_STR(s, OUTPUT_PORT_CMD(i, j, m_phys_port));
             if (m_i_op) {
-                s.str("");
-                s << ENABLE_IOP;
-                send_message(s.str(), -1);
+                SEND_STR(s, ENABLE_IOP_CMD);
             }
         }
     }
-    s.str("");
-    s << CFG_MNE(0);
-    send_message(s.str(), -1);
-
-    s.str("");
-    s << STO_MNE(1,1,m_phys_port);
-    send_message(s.str(), -1);
-    s.str("");
-    s << STO_MNE(2,1,m_phys_port);
-    send_message(s.str(), -1);
-    s.str("");
-    s << STO_MNE(3,1,m_phys_port);
-    send_message(s.str(), -1);
-    s.str("");
-    s << STO_MNE(4,1,m_phys_port);
-    send_message(s.str(), -1);
+    SEND_STR(s, CONFIG_MODE_CMD(0));
 
     std::cout << "Setup Complete" << std::endl;
-    return true;
+    return;
 }
 
 /**
- * Sends the message to the already connected POLARIS system.
+ *  Sends the message to the already connected POLARIS system.
  *  If timeout is >=0 it will wait for a response back from
  *  POLARIS and return it. If nothing is recieved before timeout
  *  is reached an empty string is returned. If timeout is <0
@@ -394,35 +544,41 @@ polaris_src_impl::connect_polaris(std::string ip, int port)
  * 
  * @return std::string 
  */
-std::string 
-polaris_src_impl::send_message(std::string s, int timeout)
+std::string
+polaris_src_impl::send_message(std::string s,
+        int timeout)
 {
     s.append("\r\n");
-    if (send(m_sock, s.c_str(), strlen(s.c_str()), 0) < 0) {
-        return "";
-    }
-    if (timeout < 0) return "";
+    boost::asio::write(*m_mne_socket,
+            boost::asio::buffer(
+                    reinterpret_cast<const void*>(s.c_str()),
+                    strlen(s.c_str())));
 
-    char buff[256];
+    if (timeout < 0)
+        return "";
+
     struct timeval tv;
     tv.tv_sec = timeout;
     tv.tv_usec = 0;
-    int check = setsockopt(m_sock, SOL_SOCKET, SO_RCVTIMEO, 
-                           (char *)&tv, sizeof(struct timeval));
+    int check = setsockopt(m_mne_socket->native(), SOL_SOCKET,
+    SO_RCVTIMEO,reinterpret_cast<char*>(&tv),sizeof(struct timeval));
     if (check < 0) {
-        std::cout << "Error setting socket options." << std::endl;
+        std::cout << "Error setting socket options."
+                << std::endl;
         return "";
     }
 
-    int err = 2000;
-    if ((err = recv(m_sock, buff, sizeof(buff), 0)) < 0) {
+    char recv_buff[MAX_RECV_SIZE];
+
+    std::size_t amnt_read = m_mne_socket->read_some(
+            boost::asio::buffer(recv_buff, MAX_RECV_SIZE));
+
+    if (amnt_read == 0)
         return "";
-    }
 
-    buff[err + 1] = '\0';
-    std::string retVal(buff);
-
-    return retVal;
+    recv_buff[amnt_read + 1] = '\0';
+    std::string ret_val(recv_buff);
+    return ret_val;
 }
 
 } /* namespace polaris */

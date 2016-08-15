@@ -1,6 +1,6 @@
 /* -*- c++ -*- */
 /* 
- * Copyright 2015 DRS.
+ * Copyright 2016 DRS.
  * 
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ public:
     typedef boost::shared_ptr<polaris_src> sptr;
 
     /*!
-     * \brief Return a shared_ptr to a new instance of polaris::POLSRC.
+     *\brief Return a shared_ptr to a new instance of polaris::POLSRC.
      *
      * To avoid accidental use of raw pointers, polaris::POLSRC's
      * constructor is in a private implementation
@@ -53,18 +53,22 @@ public:
      * creating new instances.
      */
     static sptr make(std::string ip, 
-                     int port, 
+                     int port,
+                     int mne_port,
                      std::string streamip, 
                      std::string fibip, 
-                     int num_outputs, 
+                     int num_outputs,
+                     int num_groups, 
                      bool i_op, 
                      int phys);
 
-    virtual void update_preamp(bool pam, int stream) = 0;
-    virtual void update_tuners(int tuner, int stream) = 0;
-    virtual void update_freq(double freq, int stream) = 0;
-    virtual void update_samprate(double sr) = 0;
-    virtual void update_atten(double atten, int stream) = 0;
+    virtual void update_preamp(bool pam, int group)=0;
+    virtual void update_groups(int group, int tuner, int num_ddcs)=0;
+    virtual void start_active_groups()=0;
+    virtual void update_tuner_freq(double freq, int group, int ddc)=0;
+    virtual void update_ddc_offset(double off, int group, int ddc)=0;
+    virtual void update_samp_rate(double sr, int group, int ddc)=0;
+    virtual void update_atten(double atten, int group)=0;
 };
 
 } // namespace polaris

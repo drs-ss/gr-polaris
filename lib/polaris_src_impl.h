@@ -29,149 +29,286 @@
 #define INCLUDED_POLARIS_POLSRC_IMPL_H
 
 #include <polaris/polaris_src.h>
-
-// Network stuff
-#include <sys/types.h>
-#include <sys/socket.h>
 #include <unistd.h>
-#include <arpa/inet.h>
 #include <string>
 #include <string.h>
 #include <stdlib.h>
-
 #include <boost/thread.hpp>
 #include <boost/scoped_array.hpp>
+#include <boost/asio.hpp>
 #include "complex_manager.h"
 
-#define MAX_OUTPUTS 4
-#define TCP_PORT 8081
-#define DEFAULT_SAMP_RATE 100000
-#define DEFAULT_FREQ 100000000
-#define DISABLE_OUTPUT_MNE "SYN1"
-#define ENABLE_OUTPUT_MNE "SYN0"
-#define MIN_FREQ_MHZ 2
-#define MAX_FREQ_MHZ 6200
-#define MHZ_SCALE 1000000
+/**
+ * @def MAX_RECV_SIZE
+ * @brief The maximum amount of data that can be recieved back
+ * from a mnemonic.
+ *
+ * MAX_RECV_SIZE is the maximum size (in bytes) of a response
+ * back from the radio.
+ */
+#define MAX_RECV_SIZE 1024
+
+/**
+ * @def MAX_STREAMS 
+ * @brief The maximum number of output streams from this block 
+ *  
+ * MAX_STREAMS defines the maximum number of data streams this 
+ * block can support.  It is expected to be 
+ * NUM_TUNERS * DDC_PER_TUNER. 
+ */
+#define MAX_STREAMS 8
+
+/**
+ * @def NUM_TUNERS 
+ * @brief The number of tuners attached to the Polaris unit.
+ *  
+ * NUM_TUNERS defines how many tuner boards are present under 
+ * the digital module. 
+ */
+#define NUM_TUNERS 4
+
+/**
+ * @def DDC_PER_TUNER 
+ * @brief The number of DDC per tuner board.
+ *  
+ * DDC_PER_TUNER defines the number of DDC available on each 
+ * tuner board. 
+ */
+#define DDC_PER_TUNER 2
+
+/**
+ * @def MIN_FREQ_MHZ 
+ * @brief The lowest frequency a tuner can hit.
+ *  
+ * MIN_FREQ_MHZ defines the lowest frequency a tuner can tune 
+ * to (in MHz). 
+ */
+#define MIN_FREQ_MHZ 2.0
+
+/**
+ * @def MAX_FREQ_MHZ 
+ * @brief The highest frequency a tuner can hit.
+ *  
+ * MAX_FREQ_MHZ defines the highest frequency a tuner can tune 
+ * to (in MHz). 
+ */
+#define MAX_FREQ_MHZ 6200.0
+
+/**
+ * @def MHZ_SCALE 
+ * @brief Scale to convert Hz to MHz.
+ *  
+ * MHZ_SCALE is defined as 1,000,000 for converting from Hz to 
+ * MHz. 
+ */
+#define MHZ_SCALE 1000000.0
+
+/**
+ * @def MIN_ATTEN 
+ * @brief The minimum amount of attenuation a tuner supports.
+ *  
+ * MIN_ATTEN defines the smallest amount of attenuation that can 
+ * be put into a tuner. 
+ */
 #define MIN_ATTEN 0
+
+/**
+ * @def MAX_ATTEN 
+ * @brief The maximum amount of attenuation a tuner supports.
+ *  
+ * MAX_ATTEN defines the largest amount of attenuation that can 
+ * be put into a tuner. 
+ */
 #define MAX_ATTEN 46
-#define MIN_SAMP_RATE_MHZ 0.000977f
-#define MAX_SAMP_RATE_MHZ 128.0f
+
+/**
+ * @def MIN_SAMP_RATE_MHZ 
+ * @brief The lowest sample rate the Polaris supports 
+ *  
+ * MIN_SAMP_RATE_MHZ defines the lowest sample rate the Polaris 
+ * supports (in MHz). 
+ */
+#define MIN_SAMP_RATE_MHZ 0.000977
+
+/**
+ * @def MAX_SAMP_RATE_MHZ 
+ * @brief The highest sample rate the Polaris supports
+ *  
+ * MAX_SAMP_RATE_MHZ defines the highest sample rate the Polaris 
+ * support (in MHz). 
+ */
+#define MAX_SAMP_RATE_MHZ 128.0
+
+/**
+ * @def MAX_DDC_OFFSET 
+ * @brief Max offset (in Hz) a DDC can provide. 
+ *  
+ * MAX_DDC_OFFSET defines the maximum distance a DDC can 
+ * be tuned away from the center frequency of a tuner. 
+ */
+#define MAX_DDC_OFFSET 64000000
+
+/**
+ * @def TOGGLE_STREAMING_CMD 
+ * @brief Mnemonic command to enable/disable the data streams. 
+ *  
+ * TOGGLE_STREAMING_CMD prepares a formatted string for a 
+ * stringstream object to create.  This mnemonic will turn on or 
+ * off the Vita49 streams coming out of the radio.  A value of 1 
+ * will stop streams while a value of 0 will start them. 
+ */
+#define TOGGLE_STREAMING_CMD(b)           "SYN" << b
 
 /** 
- * @def FRQ_MNE 
+ * @def TUNER_FREQUENCY_CMD 
  * @brief Mnemonic command to change the radio's frequency.
  *  
- * FRQ_MNE prepares a formatted string for a stringstream object
- * to create. This mnemonic will tune both the tuner and ddc to 
- * get the selected frequency. 
+ * TUNER_FREQUENCY_CMD prepares a formatted string for a 
+ * stringstream object to create. This mnemonic will tune the 
+ * tuner and ddc to get the selected frequency. 
 */
-#define FRQ_MNE(tuner,ddc,frq)  "FRQ" << tuner << "," << ddc \
-                                << "," << frq << ";" 
+#define TUNER_FREQUENCY_CMD(tuner,ddc,frq)  "FRT" << tuner << "," <<\
+                                ddc << "," << frq << ";" 
 
 /** 
- * @def SPR_MNE 
+ * @def DDC_FREQUENCY_CMD 
+ * @brief Mnemonic command to change the DDC's offset.
+ *  
+ * DDC_FREQUENCY_CMD prepares a formatted string for a 
+ * stringstream object to create. This mnemonic will tune the 
+ * DDC for the tuner to the requested offset. 
+*/
+#define DDC_FREQUENCY_CMD(tuner,ddc,off)  "FRD" << tuner << "," << \
+                                ddc << "," << off << ";" 
+
+/** 
+ * @def SAMPLE_RATE_CMD 
  * @brief Mnemonic command to change the radio's sample rate.
  *  
- * SPR_MNE prepares a formatted string for a stringstream object
- * to create. This mnemonic will change the sample rate for the 
- * associated tuner/ddc combo. 
+ * SAMPLE_RATE_CMD prepares a formatted string for a 
+ * stringstream object to create. This mnemonic will change the 
+ * sample rate for the associated tuner/ddc combo. 
 */
-#define SPR_MNE(tuner,ddc,spr)  "SPR" << tuner << "," << ddc \
+#define SAMPLE_RATE_CMD(tuner,ddc,spr)  "SPR" << tuner << "," << ddc\
                                 << "," << spr << ";"
 
 /** 
- * @def STE_MNE 
+ * @def DATA_STREAM_CMD 
  * @brief Mnemonic command to enable data streams.
  *  
- * STE_MNE prepares a formatted string for a stringstream object
- * to create. This mnemonic will enable the Vita49 data stream 
- * for the associated tuner/ddc. 
+ * DATA_STREAM_CMD prepares a formatted string for a 
+ * stringstream object to create. This mnemonic will enable the 
+ * Vita49 data stream for the associated tuner/ddc. 
 */
-#define STE_MNE(tuner,ddc,ste)  "STE" << tuner << "," << ddc \
+#define DATA_STREAM_CMD(tuner,ddc,ste)  "STE" << tuner << "," << ddc\
                                 << "," << ste << ";"
 
 /** 
- * @def ATN_MNE 
+ * @def ATTENUATION_CMD 
  * @brief Mnemonic command to change the radio's attenuation.
  *  
- * ATN_MNE prepares a formatted string for a stringstream object
- * to create. This mnemonic will change the attenuation level 
- * for the specified tuner. 
+ * ATTENUATION_CMD prepares a formatted string for a 
+ * stringstream object to create. This mnemonic will change the 
+ * attenuation level for the specified tuner. 
 */
-#define ATN_MNE(tuner,atten)    "RCH" << tuner << ";ATN" << \
+#define ATTENUATION_CMD(tuner,atten)    "RCH" << tuner << ";ATN" << \
                                 atten << ";RCH0;"
 
 /** 
- * @def PAM_MNE 
+ * @def PREAMP_CMD 
  * @brief Mnemonic command to enabled the radio's preamp.
  *  
- * PAM_MNE prepares a formatted string for a stringstream object
- * to create. This mnemonic will turn on or off the preamp for 
- * the specified tuner. 
+ * PREAMP_CMD prepares a formatted string for a stringstream 
+ * object to create. This mnemonic will turn on or off the 
+ * preamp for the specified tuner. 
 */
-#define PAM_MNE(tuner,pam)      "RCH" << tuner << ";PAM" << \
+#define PREAMP_CMD(tuner,pam)      "RCH" << tuner << ";PAM" << \
                                 pam << ";RCH0;"
 
 /** 
- * @def STO_MNE 
+ * @def OUTPUT_PORT_CMD 
  * @brief Mnemonic command to change the 10 gig port for 
  *        streaming.
  *  
- * STO_MNE prepares a formatted string for a stringstream object
- * to create. This mnemonic will allow you to select which 10 
- * gig port the tuner/ddc combo will stream out. 
+ * OUTPUT_PORT_CMD prepares a formatted string for a 
+ * stringstream object to create. This mnemonic will allow you 
+ * to select which 10 gig port the tuner/ddc combo will stream 
+ * out. 
 */
-#define STO_MNE(tuner,ddc,port) "STO" << tuner << "," << ddc \
+#define OUTPUT_PORT_CMD(tuner,ddc,port) "STO" << tuner << "," << ddc\
                                 << "," << port << ";"
 
 /** 
- * @def CFG_MNE 
+ * @def CONFIG_MODE_CMD 
  * @brief Mnemonic command to enable configuration mode.
  *  
- * CFG_MNE prepares a formatted string for a stringstream object
- * to create. This mnemonic can enable/disable configuration 
- * mode for the radio. 
+ * CONFIG_MODE_CMD prepares a formatted string for a 
+ * stringstream object to create. This mnemonic can 
+ * enable/disable configuration mode for the radio. 
 */
-#define CFG_MNE(cfg)            "CFG" << cfg << ";"
+#define CONFIG_MODE_CMD(cfg)            "CFG" << cfg << ";"
 
 /** 
- * @def UDP_MNE 
+ * @def STREAM_SRC_CMD 
  * @brief Mnemonic command to change the radio's 10gig ip 
  *        address.
  *  
- * FRQ_MNE prepares a formatted string for a stringstream object
- * to create. This mnemonic will set the ip address of the 
- * specified tuner/ddc for streaming. 
+ * STREAM_SRC_CMD prepares a formatted string for a stringstream 
+ * object to create. This mnemonic will set the ip address of 
+ * the specified tuner/ddc for streaming. 
 */
-#define UDP_MNE(tuner,ddc,addr,port,mac)  "#UDP" << tuner << \
+#define STREAM_SRC_CMD(tuner,ddc,addr,port,mac)  "#UDP" << tuner << \
                                           "," << ddc << "," <<\
                                           addr << "," << port \
                                           << "," << mac << ";"
 
 /** 
- * @def SIP_MNE 
+ * @def STREAM_DEST_CMD 
  * @brief Mnemonic command to change the radio's stream 
  *        destination.
  *  
- * SIP_MNE prepares a formatted string for a stringstream object
- * to create.  This mnemonic will set the destination for the 
- * Vita49 data stream for the specified tuner/ddc. 
+ * STREAM_DEST_CMD prepares a formatted string for a 
+ * stringstream object to create.  This mnemonic will set the 
+ * destination for the Vita49 data stream for the specified 
+ * tuner/ddc. 
 */
-#define SIP_MNE(tuner,ddc,addr,port,mac)  "SIP" << tuner << \
+#define STREAM_DEST_CMD(tuner,ddc,addr,port,mac)  "SIP" << tuner << \
                                           "," << ddc << "," <<\
                                           addr << "," << port \
                                           << "," << mac << ";"
 
 /** 
- * @def ENABLE_IOP 
+ * @def ENABLE_IOP_CMD 
  * @brief Mnemonic command to change the radio to independent 
  *        operation mode.
  *  
- * ENABLE_IOP a prepared string of mnemonics which set the radio 
- * to independent operation mode. 
+ * ENABLE_IOP_CMD a prepared string of mnemonics which set the 
+ * radio to independent operation mode. 
 */
-#define ENABLE_IOP              "RCH1;DFM2;RCH2;DFM2;RCH3;DFM2"\
+#define ENABLE_IOP_CMD              "RCH1;DFM2;RCH2;DFM2;RCH3;DFM2"\
                                 ";RCH4;DFM2;RCH0"
+
+/** 
+ * @def SHUTDOWN_STREAMING_CMD 
+ * @brief Mnemonic command to set all streams to be off.
+ *  
+ * SHUTDOWN_STREAMING_CMD a prepared string of mnemonics which 
+ * turns off all data streams. 
+*/ 
+#define SHUTDOWN_STREAMING_CMD      "RCH0;STE1,1,0;STE2,1,0;STE3,1"\
+                                ",0;STE4,1,0;STE1,2,0;STE2,2,0;STE"\
+                                "3,2,0;STE4,2,0;CFG0"
+
+/**
+ * @def SEND_STR
+ * @brief Formats a string to be sent to the radio.
+ *
+ * SEND_STR prepares a command to be sent to the radio by
+ * concatenating string together and shipping them out in one
+ * stringstream.
+ */
+#define SEND_STR(s,a) {s.str("");s<<a;send_message(s.str());\
+                                        s.str("");}
 
 namespace gr
 {
@@ -181,8 +318,21 @@ namespace polaris
 class polaris_src_impl : public polaris_src
 {
 private:
-    struct sockaddr_in m_server;
-    int m_sock;
+    struct group_data_struct{
+        int num_ddcs;
+        double ddc_freq[DDC_PER_TUNER];
+        double ddc_sr[DDC_PER_TUNER];
+        int tuner_freq;
+        double atten;
+        int tuner;
+        bool preamp;
+        bool active;
+        int sr_ind[DDC_PER_TUNER];
+    };
+
+    // Networking stuff
+    boost::shared_ptr<boost::asio::ip::tcp::socket> m_mne_socket;
+    boost::asio::io_service m_mne_io_service;
 
     // Flag for whether or not we have a connection to the unit.
     bool m_connected;
@@ -194,38 +344,39 @@ private:
     std::string m_fiber_address;
     // Port to recv data on
     int m_rec_port;
-    // Port to connect to mne_app, defaults to 8081 in the constructor.
-    int m_port;
-
+    // Port to connect to mne_app
+    int m_mne_port;
+    // Which physcial port should the polaris use to stream data
     int m_phys_port;
-
+    // How many tuners have at least 1 active DDC
+    int m_num_output_groups;
     // Pointer to the complex manager that processes our data for us.
     boost::scoped_ptr<complex_manager> m_complex_manager;
-
     // Independent operation
     bool m_i_op;
-
     // Number of outputs on this block
     int m_num_output_streams;
 
-    // The variables associated with each of the streams.  
-    // Each stream has it's own samprate, freq, 
-    // atten, tuner, and preamp value
-    double m_samp_rate;
-    boost::scoped_array<double> m_freqs;
-    boost::scoped_array<double> m_attens;
+    int m_sample_rates[MAX_STREAMS];
     boost::scoped_array<int> m_tuners;
-    boost::scoped_array<bool> m_preamps;
 
-    bool connect_polaris(std::string ip, int port);
-    std::string send_message(std::string s, int timeout);
-    void set_freq(double freq, int stream);
-    void set_atten(double atten, int stream);
-    void set_tuner(int tuner, int stream);
+    boost::scoped_array<group_data_struct> m_group_data;
+
+    int m_sr_index;
+    int m_tuner_index;
+
+    std::string send_message(std::string s, int timeout = -1);
+    void set_tuner_freq(double freq, int group, int ddc);
+    void set_ddc_offset(double offset, int group, int ddc);
+    void set_atten(double atten, int group);
+    void set_tuner(int tuner, int group, int num_ddcs);
+    void set_samp_rate(double rate, int group, int ddc);
     void try_connect();
+    void setup_polaris();
 public:
     polaris_src_impl(std::string ip, std::string streamip, 
-                     std::string fibip, int port, int num_outputs, 
+                     std::string fibip, int port, int mne_port, 
+                     int num_outputs, int num_groups, 
                      bool indpendent_operation, int phys);
     ~polaris_src_impl();
 
@@ -236,22 +387,28 @@ public:
      * 
      * 
      * @param pam - Whether to turn the preamp on or off.
-     * @param stream - Which output stream to process for. 
+     * @param group - group number of the DDC. 
      *  
      * @note Enabling the preamp disables attenuation. 
      */
-    void update_preamp(bool pam, int stream);
+    void update_preamp(bool pam, int group);
 
     /**
      * Update's a streams output to display the specified tuner's 
      * data. Accessable from python.
      * 
-     * 
+     * @param group - group number (1-4)
      * @param tuner - Which tuner you would like data from.
-     * @param stream - Which stream you would like the data to go 
-     *               out.
+     * @param num_ddcs - number of ddcs in this group
      */
-    void update_tuners(int tuner, int stream);
+    void update_groups(int group, int tuner, int num_ddcs);
+
+    /**
+     * Starts active grups by looking at the group_data_struct's 
+     * members.  
+     * 
+     */
+    void start_active_groups();
 
     /**
      * Update's the frequency for this stream's tuner.  Accessable 
@@ -259,17 +416,31 @@ public:
      * 
      * 
      * @param freq - The frequency to tune to.
-     * @param stream - Which output stream to change.
+     * @param group - Which output group to change. 
+     * @param ddc - Which DDC to change. 
      */
-    void update_freq(double freq, int stream);
+    void update_tuner_freq(double freq, int group, int ddc);
+
+     /**
+     * Update's the frequency offset for this tuners DDC.  Accessable
+     * from python. 
+     * 
+     * 
+     * @param offset - The offset from the tuner frequency.
+     * @param group - Which group we are ofset from. 
+     * @param ddc - The ddc number for that tuner. 
+     */
+    void update_ddc_offset(double offset, int group, int ddc);
 
     /**
      * Set the samplerate for all streams.  Accessable from python.
      * 
      * 
-     * @param sr - Sample rate to set.
+     * @param sr - Sample rate to set. 
+     * @param group - group number of the DDC. 
+     * @param ddc - ddc number we are updataing. 
      */
-    void update_samprate(double sr);
+    void update_samp_rate(double sr, int group, int ddc);
 
     /**
      * Set the attenuation for this stream's tuner.  Accessable from 
@@ -277,11 +448,11 @@ public:
      * 
      * 
      * @param atten - The attenuation to apply.
-     * @param stream - Which stream you apply attenuation to. 
+     * @param group - Which group you apply attenuation to. 
      *  
      * @note Setting attenuation disables preamp. 
      */
-    void update_atten(double atten, int stream);
+    void update_atten(double atten, int group);
 
     // gr_block extended functions
     void forecast(int noutput_items, gr_vector_int 
