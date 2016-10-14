@@ -4,7 +4,23 @@
     <key>polaris_polaris_src</key>
     <category>DRS Blocks</category>
     <import>import polaris</import>
-    <make>polaris.polaris_src($dev_ip, $stream_port, $mne_port, $stream_ip, $fiber_ip, ($numddc1+((($nchan/2)-($nchan/4)) * $numddc2)+(($nchan/3)*$numddc3)+(($nchan/4) * $numddc4)), $nchan, $i_op, $phys)
+    <make>polaris.polaris_src($dev_ip, $stream_port, $mne_port, $flex_port, $stream_ip, $fiber_ip, (($numddc1()+((($nchan()/2)-($nchan()/4)) * $numddc2())+(($nchan()/3)*$numddc3())+(($nchan()/4) * $numddc4())) - ((($flex_num_streams() - (($flex_num_streams()/2)-($flex_num_streams()/4))-($flex_num_streams()/3)-($flex_num_streams()/4)) * $flex_1_complex() * (($flex_1_src()%3) - (($flex_1_src()%3)/2))) + ((($flex_num_streams()/2) - ($flex_num_streams()/4))*$flex_2_complex() * (($flex_2_src()%3) - (($flex_2_src()%3)/2))) + (($flex_num_streams()/3) * $flex_3_complex() * (($flex_3_src()%3) - (($flex_3_src()%3)/2))) + (($flex_num_streams()/4) * $flex_4_complex() * (($flex_4_src()%3) - (($flex_4_src()%3)/2))))), $nchan, $flex_num_streams, $i_op, $phys)
+self.$(id).update_flex_stream(1, $flex_1_src, $flex_1_complex)
+self.$(id).update_flex_stream(2, $flex_2_src, $flex_2_complex)
+self.$(id).update_flex_stream(3, $flex_3_src, $flex_3_complex)
+self.$(id).update_flex_stream(4, $flex_4_src, $flex_4_complex)
+self.$(id).update_flex_rate(1,$flex_1_rate)
+self.$(id).update_flex_rate(2,$flex_2_rate)
+self.$(id).update_flex_rate(3,$flex_3_rate)
+self.$(id).update_flex_rate(4,$flex_4_rate)
+self.$(id).update_flex_ave(1,$flex_1_ave)
+self.$(id).update_flex_ave(2,$flex_2_ave)
+self.$(id).update_flex_ave(3,$flex_3_ave)
+self.$(id).update_flex_ave(4,$flex_4_ave)
+self.$(id).update_flex_size(1,$flex_1_size)
+self.$(id).update_flex_size(2,$flex_2_size)
+self.$(id).update_flex_size(3,$flex_3_size)
+self.$(id).update_flex_size(4,$flex_4_size)
 self.$(id).update_groups(1, $valuet1, $numddc1)
 self.$(id).update_groups(2, $valuet2, $numddc2)
 self.$(id).update_groups(3, $valuet3, $numddc3)
@@ -78,19 +94,42 @@ self.$(id).update_samp_rate($valueg4d2sr, 4, 2)
     <callback>update_preamp($valuepa2, 2)</callback>
     <callback>update_preamp($valuepa3, 3)</callback>
     <callback>update_preamp($valuepa4, 4)</callback>
+    <callback>update_flex_stream(1, $flex_1_src, $flex_1_complex)</callback>
+    <callback>update_flex_stream(2, $flex_2_src, $flex_2_complex)</callback>
+    <callback>update_flex_stream(3, $flex_3_src, $flex_3_complex)</callback>
+    <callback>update_flex_stream(4, $flex_4_src, $flex_4_complex)</callback>
+    <callback>update_flex_rate(1,$flex_1_rate)</callback>
+    <callback>update_flex_rate(2,$flex_2_rate)</callback>
+    <callback>update_flex_rate(3,$flex_3_rate)</callback>
+    <callback>update_flex_rate(4,$flex_4_rate)</callback>
+    <callback>update_flex_ave(1,$flex_1_ave)</callback>
+    <callback>update_flex_ave(2,$flex_2_ave)</callback>
+    <callback>update_flex_ave(3,$flex_3_ave)</callback>
+    <callback>update_flex_ave(4,$flex_4_ave)</callback>
+    <callback>update_flex_size(1,$flex_1_size)</callback>
+    <callback>update_flex_size(2,$flex_2_size)</callback>
+    <callback>update_flex_size(3,$flex_3_size)</callback>
+    <callback>update_flex_size(4,$flex_4_size)</callback>
+    <param_tab_order>
+        <tab>General</tab>
+        <tab>FlexFFT</tab>
+    </param_tab_order>
     <param>
         <name>Polaris Command IP</name>
         <key>dev_ip</key>
+        <value>169.254.1.2</value>
         <type>string</type>
     </param>
     <param>
         <name>Polaris 10 Gig IP</name>
         <key>stream_ip</key>
+        <value>192.168.1.2</value>
         <type>string</type>
     </param>
     <param>
         <name>Machine 10 Gig IP</name>
         <key>fiber_ip</key>
+        <value>192.168.1.6</value>
         <type>string</type>
     </param>
     <param>
@@ -102,6 +141,7 @@ self.$(id).update_samp_rate($valueg4d2sr, 4, 2)
     <param>
         <name>Data Stream Port</name>
         <key>stream_port</key>
+        <value>4991</value>
         <type>int</type>
     </param>
     <param>
@@ -109,12 +149,28 @@ self.$(id).update_samp_rate($valueg4d2sr, 4, 2)
         <key>phys</key>
         <value>0</value>
         <type>int</type>
+        <option>
+            <name>Right</name>
+            <key>0</key>
+        </option>
+        <option>
+            <name>Left</name>
+            <key>1</key>
+        </option>
     </param>
     <param>
         <name>Independent Operation</name>
         <key>i_op</key>
         <value>True</value>
         <type>bool</type>
+        <option>
+            <name>True</name>
+            <key>True</key>
+        </option>
+        <option>
+            <name>False</name>
+            <key>False</key>
+        </option>
     </param>
     <param>
         <name>Num Output Groups</name>
@@ -161,10 +217,14 @@ self.$(id).update_samp_rate($valueg4d2sr, 4, 2)
         </option>
     </param>
     <param>
-        <name>DDCs for Group 1</name>
+        <name>Group 1 # DDCs</name>
         <key>numddc1</key>
-        <value>1</value>
+        <value>0</value>
         <type>int</type>
+        <option>
+            <name>None</name>
+            <key>0</key>
+        </option>
         <option>
             <name>1</name>
             <key>1</key>
@@ -181,10 +241,18 @@ self.$(id).update_samp_rate($valueg4d2sr, 4, 2)
         <type>real</type>
     </param>
      <param>
-        <name>Group 1 Enable PreAmp</name>
+        <name>Group 1 PreAmp</name>
         <key>valuepa1</key>
         <value>False</value>
         <type>bool</type>
+        <option>
+            <name>Enabled</name>
+            <key>True</key>
+        </option>
+        <option>
+            <name>Disabled</name>
+            <key>False</key>
+        </option>
     </param>
     <param>
         <name>Group 1 Tuner Freq</name>
@@ -197,12 +265,14 @@ self.$(id).update_samp_rate($valueg4d2sr, 4, 2)
         <key>valueg1d1f</key>
         <value>0</value>
         <type>real</type>
+        <hide>#if $numddc1() > 0 then 'none' else 'all'</hide>
     </param>
     <param>
         <name>Group 1 DDC 1 SR</name>
         <key>valueg1d1sr</key>
         <value>10000000</value>
         <type>real</type>
+        <hide>#if $numddc1() > 0 then 'none' else 'all'</hide>
     </param>
     <param>
         <name>Group 1 DDC 2 Offset</name>
@@ -242,11 +312,15 @@ self.$(id).update_samp_rate($valueg4d2sr, 4, 2)
         </option>
     </param>
     <param>
-        <name>DDCs for Group 2</name>
+        <name>Group 2 # DDCs</name>
         <key>numddc2</key>
-        <value>1</value>
+        <value>0</value>
         <type>int</type>
         <hide>#if $nchan() > 1 then 'none' else 'all'#</hide>
+        <option>
+            <name>None</name>
+            <key>0</key>
+        </option>
         <option>
             <name>1</name>
             <key>1</key>
@@ -264,11 +338,19 @@ self.$(id).update_samp_rate($valueg4d2sr, 4, 2)
         <hide>#if $nchan() > 1 then 'none' else 'all'#</hide>
     </param>
     <param>
-        <name>Group 2 Enable PreAmp</name>
+        <name>Group 2 PreAmp</name>
         <key>valuepa2</key>
         <value>False</value>
         <type>bool</type>
-         <hide>#if $nchan() > 1 then 'none' else 'all'#</hide>
+        <hide>#if $nchan() > 1 then 'none' else 'all'#</hide>
+        <option>
+            <name>Enabled</name>
+            <key>True</key>
+        </option>
+        <option>
+            <name>Disabled</name>
+            <key>False</key>
+        </option>
     </param>
     <param>
         <name>Group 2 Tuner Freq</name>
@@ -278,18 +360,18 @@ self.$(id).update_samp_rate($valueg4d2sr, 4, 2)
         <hide>#if $nchan() > 1 then 'none' else 'all'#</hide>
     </param>
     <param>
-        <name>Group 2  DDC 1 Offset</name>
+        <name>Group 2 DDC 1 Offset</name>
         <key>valueg2d1f</key>
         <value>0</value>
         <type>real</type>
-        <hide>#if $nchan() > 1 then 'none' else 'all'#</hide>
+        <hide>#if $nchan() > 1 and $numddc2() > 0 then 'none' else 'all'#</hide>
     </param>
     <param>
         <name>Group 2 DDC 1 SR</name>
         <key>valueg2d1sr</key>
         <value>10000000</value>
         <type>real</type>
-        <hide>#if $nchan() > 1 then 'none' else 'all'#</hide>
+        <hide>#if $nchan() > 1 and $numddc2() > 0 then 'none' else 'all'#</hide>
     </param>
     <param>
         <name>Group 2 DDC 2 Offset</name>
@@ -329,11 +411,15 @@ self.$(id).update_samp_rate($valueg4d2sr, 4, 2)
         </option>
     </param>
     <param>
-        <name>DDCs for Group 3</name>
+        <name>Group 3 # DDCs</name>
         <key>numddc3</key>
-        <value>1</value>
+        <value>0</value>
         <type>int</type>
         <hide>#if $nchan() > 2 then 'none' else 'all'#</hide>
+        <option>
+            <name>None</name>
+            <key>0</key>
+        </option>
         <option>
             <name>1</name>
             <key>1</key>
@@ -351,11 +437,19 @@ self.$(id).update_samp_rate($valueg4d2sr, 4, 2)
         <hide>#if $nchan() > 2 then 'none' else 'all'#</hide>
     </param>
     <param>
-        <name>Group 3 Enable PreAmp</name>
+        <name>Group 3 PreAmp</name>
         <key>valuepa3</key>
         <value>False</value>
         <type>bool</type>
-         <hide>#if $nchan() > 2 then 'none' else 'all'#</hide>
+        <hide>#if $nchan() > 2 then 'none' else 'all'#</hide>
+        <option>
+            <name>Enabled</name>
+            <key>True</key>
+        </option>
+        <option>
+            <name>Disabled</name>
+            <key>False</key>
+        </option>
     </param>
     <param>
         <name>Group 3 Tuner Freq</name>
@@ -365,18 +459,18 @@ self.$(id).update_samp_rate($valueg4d2sr, 4, 2)
         <hide>#if $nchan() > 2 then 'none' else 'all'#</hide>
     </param>
     <param>
-        <name>Group 3  DDC 1 Offset</name>
+        <name>Group 3 DDC 1 Offset</name>
         <key>valueg3d1f</key>
         <value>0</value>
         <type>real</type>
-        <hide>#if $nchan() > 2 then 'none' else 'all'#</hide>
+        <hide>#if $numddc3() > 0 and $nchan() > 2 then 'none' else 'all'#</hide>
     </param>
     <param>
         <name>Group 3 DDC 1 SR</name>
         <key>valueg3d1sr</key>
         <value>10000000</value>
         <type>real</type>
-        <hide>#if $nchan() > 2 then 'none' else 'all'#</hide>
+        <hide>#if $numddc3() > 0 and $nchan() > 2 then 'none' else 'all'#</hide>
     </param>
     <param>
         <name>Group 3 DDC 2 Offset</name>
@@ -416,11 +510,15 @@ self.$(id).update_samp_rate($valueg4d2sr, 4, 2)
         </option>
     </param>
     <param>
-        <name>DDCs for Group 4</name>
+        <name>Group 4 # DDCs</name>
         <key>numddc4</key>
-        <value>1</value>
+        <value>0</value>
         <type>int</type>
         <hide>#if $nchan() > 3 then 'none' else 'all'#</hide>
+        <option>
+            <name>None</name>
+            <key>0</key>
+        </option>
         <option>
             <name>1</name>
             <key>1</key>
@@ -438,11 +536,19 @@ self.$(id).update_samp_rate($valueg4d2sr, 4, 2)
         <hide>#if $nchan() > 3 then 'none' else 'all'#</hide>
     </param>
     <param>
-        <name>Group 4 Enable PreAmp</name>
+        <name>Group 4 PreAmp</name>
         <key>valuepa4</key>
         <value>False</value>
         <type>bool</type>
-         <hide>#if $nchan() > 3 then 'none' else 'all'#</hide>
+        <hide>#if $nchan() > 3 then 'none' else 'all'#</hide>
+        <option>
+            <name>Enabled</name>
+            <key>True</key>
+        </option>
+        <option>
+            <name>Disabled</name>
+            <key>False</key>
+        </option>
     </param>
     <param>
         <name>Group 4 Tuner Frequency</name>
@@ -452,18 +558,18 @@ self.$(id).update_samp_rate($valueg4d2sr, 4, 2)
         <hide>#if $nchan() > 3 then 'none' else 'all'#</hide>
     </param>
     <param>
-        <name>Group 4  DDC 1 Offset</name>
+        <name>Group 4 DDC 1 Offset</name>
         <key>valueg4d1f</key>
         <value>0</value>
         <type>real</type>
-        <hide>#if $nchan() > 3 then 'none' else 'all'#</hide>
+        <hide>#if $numddc4() > 0 and $nchan() > 3 then 'none' else 'all'#</hide>
     </param>
     <param>
         <name>Group 4 DDC 1 SR</name>
         <key>valueg4d1sr</key>
         <value>10000000</value>
         <type>real</type>
-        <hide>#if $nchan() > 3 then 'none' else 'all'#</hide>
+        <hide>#if $numddc4() > 0 and $nchan() > 3 then 'none' else 'all'#</hide>
     </param>
     <param>
         <name>Group 4 DDC 2 Offset</name>
@@ -479,6 +585,755 @@ self.$(id).update_samp_rate($valueg4d2sr, 4, 2)
         <type>real</type>
         <hide>#if $numddc4() > 1 and $nchan() > 3 then 'none' else 'all'#</hide>
     </param>
+<!-- FlexFFT Tab Items  -->
+    <param>
+        <name>Flex FFT Port</name>
+        <key>flex_port</key>
+        <value>4992</value>
+        <type>int</type>
+        <hide>part</hide>
+        <tab>FlexFFT</tab>
+    </param>
+    <param>
+        <name>Flex Stream Count</name>
+        <key>flex_num_streams</key>
+        <value>0</value>
+        <type>int</type>
+        <hide>part</hide>
+        <option>
+            <name>None</name>
+            <key>0</key>
+        </option>
+        <option>
+            <name>1</name>
+            <key>1</key>
+        </option>
+        <option>
+            <name>2</name>
+            <key>2</key>
+        </option>
+        <option>
+            <name>3</name>
+            <key>3</key>
+        </option>
+        <option>
+            <name>4</name>
+            <key>4</key>
+        </option>
+        <tab>FlexFFT</tab>
+    </param>
+<!-- Stream 1 Config  -->
+    <param>
+        <name>Stream 1 Source</name>
+        <key>flex_1_src</key>
+        <value>0</value>
+        <type>int</type>
+        <hide>#if $flex_num_streams() > 0 then 'none' else 'all'#</hide>
+        <option>
+            <name>[Tuner 1] ADC</name>
+            <key>0</key>
+        </option>
+        <option>
+            <name>[Tuner 1] DDC 1</name>
+            <key>1</key>
+        </option>
+        <option>
+            <name>[Tuner 1] DDC 2</name>
+            <key>2</key>
+        </option>
+        <option>
+            <name>[Tuner 2] ADC</name>
+            <key>3</key>
+        </option>
+        <option>
+            <name>[Tuner 2] DDC 1</name>
+            <key>4</key>
+        </option>
+        <option>
+            <name>[Tuner 2] DDC 2</name>
+            <key>5</key>
+        </option>
+        <option>
+            <name>[Tuner 3] ADC</name>
+            <key>6</key>
+        </option>
+        <option>
+            <name>[Tuner 3] DDC 1</name>
+            <key>7</key>
+        </option>
+        <option>
+            <name>[Tuner 3] DDC 2</name>
+            <key>8</key>
+        </option>
+        <option>
+            <name>[Tuner 4] ADC</name>
+            <key>9</key>
+        </option>
+        <option>
+            <name>[Tuner 4] DDC 1</name>
+            <key>10</key>
+        </option>
+        <option>
+            <name>[Tuner 4] DDC 2</name>
+            <key>11</key>
+        </option>
+        <tab>FlexFFT</tab>
+    </param>
+    <param>
+        <name>Stream 1 Complex</name>
+        <key>flex_1_complex</key>
+        <value>1</value>
+        <type>int</type>
+        <hide>#if $flex_num_streams() > 0 and $flex_1_src() % 3 > 0 then 'none' else 'all'</hide>
+        <option>
+            <name>Disable Complex</name>
+            <key>1</key>
+        </option>
+        <option>
+            <name>Enable Complex</name>
+            <key>0</key>
+        </option>
+        <tab>FlexFFT</tab>
+    </param>
+    <param>
+        <name>Stream 1 Rate</name>
+        <key>flex_1_rate</key>
+        <value>10</value>
+        <type>float</type>
+        <hide>#if $flex_num_streams() > 0 then 'none' else 'all'#</hide>
+        <tab>FlexFFT</tab>
+    </param>
+    <param>
+        <name>Stream 1 Average</name>
+        <key>flex_1_ave</key>
+        <value>1</value>
+        <type>int</type>
+        <hide>#if $flex_num_streams() > 0 then 'none' else 'all'#</hide>
+        <option>
+            <name>1</name>
+            <key>1</key>
+        </option>
+        <option>
+            <name>2</name>
+            <key>2</key>
+        </option>
+        <option>
+            <name>4</name>
+            <key>4</key>
+        </option>
+        <option>
+            <name>8</name>
+            <key>8</key>
+        </option>
+        <option>
+            <name>16</name>
+            <key>16</key>
+        </option>
+        <option>
+            <name>32</name>
+            <key>32</key>
+        </option>
+        <option>
+            <name>64</name>
+            <key>64</key>
+        </option>
+        <option>
+            <name>128</name>
+            <key>128</key>
+        </option>
+        <option>
+            <name>256</name>
+            <key>256</key>
+        </option>
+        <option>
+            <name>512</name>
+            <key>512</key>
+        </option>
+        <option>
+            <name>1024</name>
+            <key>1024</key>
+        </option>
+        <tab>FlexFFT</tab>
+    </param>
+    <param>
+        <name>Stream 1 Size</name>
+        <key>flex_1_size</key>
+        <value>128</value>
+        <type>int</type>
+        <hide>#if $flex_num_streams() > 0 then 'none' else 'all'#</hide>
+        <option>
+            <name>32 [ADC Only]</name>
+            <key>32</key>
+        </option>
+        <option>
+            <name>64</name>
+            <key>64</key>
+        </option>
+        <option>
+            <name>128</name>
+            <key>128</key>
+        </option>
+        <option>
+            <name>256</name>
+            <key>256</key>
+        </option>
+        <option>
+            <name>512</name>
+            <key>512</key>
+        </option>
+        <option>
+            <name>1024</name>
+            <key>1024</key>
+        </option>
+        <option>
+            <name>2048</name>
+            <key>2048</key>
+        </option>
+        <option>
+            <name>4096</name>
+            <key>4096</key>
+        </option>
+        <option>
+            <name>8192 [DDC Only]</name>
+            <key>8192</key>
+        </option>
+        <tab>FlexFFT</tab>
+    </param>
+<!-- End Stream 1 Config  -->
+<!-- Stream 2 Config  -->
+    <param>
+        <name>Stream 2 Source</name>
+        <key>flex_2_src</key>
+        <value>3</value>
+        <type>int</type>
+        <hide>#if $flex_num_streams() > 1 then 'none' else 'all'#</hide>
+        <option>
+            <name>[Tuner 1] ADC</name>
+            <key>0</key>
+        </option>
+        <option>
+            <name>[Tuner 1] DDC 1</name>
+            <key>1</key>
+        </option>
+        <option>
+            <name>[Tuner 1] DDC 2</name>
+            <key>2</key>
+        </option>
+        <option>
+            <name>[Tuner 2] ADC</name>
+            <key>3</key>
+        </option>
+        <option>
+            <name>[Tuner 2] DDC 1</name>
+            <key>4</key>
+        </option>
+        <option>
+            <name>[Tuner 2] DDC 2</name>
+            <key>5</key>
+        </option>
+        <option>
+            <name>[Tuner 3] ADC</name>
+            <key>6</key>
+        </option>
+        <option>
+            <name>[Tuner 3] DDC 1</name>
+            <key>7</key>
+        </option>
+        <option>
+            <name>[Tuner 3] DDC 2</name>
+            <key>8</key>
+        </option>
+        <option>
+            <name>[Tuner 4] ADC</name>
+            <key>9</key>
+        </option>
+        <option>
+            <name>[Tuner 4] DDC 1</name>
+            <key>10</key>
+        </option>
+        <option>
+            <name>[Tuner 4] DDC 2</name>
+            <key>11</key>
+        </option>
+        <tab>FlexFFT</tab>
+    </param>
+    <param>
+        <name>Stream 2 Complex</name>
+        <key>flex_2_complex</key>
+        <value>1</value>
+        <type>int</type>
+        <hide>#if $flex_num_streams() > 1 and $flex_2_src() % 3 > 0 then 'none' else 'all'</hide>
+        <option>
+            <name>Disable Complex</name>
+            <key>1</key>
+        </option>
+        <option>
+            <name>Enable Complex</name>
+            <key>0</key>
+        </option>
+        <tab>FlexFFT</tab>
+    </param>
+    <param>
+        <name>Stream 2 Rate</name>
+        <key>flex_2_rate</key>
+        <value>10</value>
+        <type>float</type>
+        <hide>#if $flex_num_streams() > 1 then 'none' else 'all'#</hide>
+        <tab>FlexFFT</tab>
+    </param>
+    <param>
+        <name>Stream 2 Average</name>
+        <key>flex_2_ave</key>
+        <value>1</value>
+        <type>int</type>
+        <hide>#if $flex_num_streams() > 1 then 'none' else 'all'#</hide>
+        <option>
+            <name>1</name>
+            <key>1</key>
+        </option>
+        <option>
+            <name>2</name>
+            <key>2</key>
+        </option>
+        <option>
+            <name>4</name>
+            <key>4</key>
+        </option>
+        <option>
+            <name>8</name>
+            <key>8</key>
+        </option>
+        <option>
+            <name>16</name>
+            <key>16</key>
+        </option>
+        <option>
+            <name>32</name>
+            <key>32</key>
+        </option>
+        <option>
+            <name>64</name>
+            <key>64</key>
+        </option>
+        <option>
+            <name>128</name>
+            <key>128</key>
+        </option>
+        <option>
+            <name>256</name>
+            <key>256</key>
+        </option>
+        <option>
+            <name>512</name>
+            <key>512</key>
+        </option>
+        <option>
+            <name>1024</name>
+            <key>1024</key>
+        </option>
+        <tab>FlexFFT</tab>
+    </param>
+    <param>
+        <name>Stream 2 Size</name>
+        <key>flex_2_size</key>
+        <value>128</value>
+        <type>int</type>
+        <hide>#if $flex_num_streams() > 1 then 'none' else 'all'#</hide>
+        <option>
+            <name>32 [ADC Only]</name>
+            <key>32</key>
+        </option>
+        <option>
+            <name>64</name>
+            <key>64</key>
+        </option>
+        <option>
+            <name>128</name>
+            <key>128</key>
+        </option>
+        <option>
+            <name>256</name>
+            <key>256</key>
+        </option>
+        <option>
+            <name>512</name>
+            <key>512</key>
+        </option>
+        <option>
+            <name>1024</name>
+            <key>1024</key>
+        </option>
+        <option>
+            <name>2048</name>
+            <key>2048</key>
+        </option>
+        <option>
+            <name>4096</name>
+            <key>4096</key>
+        </option>
+        <option>
+            <name>8192 [DDC Only]</name>
+            <key>8192</key>
+        </option>
+        <tab>FlexFFT</tab>
+    </param>
+<!-- End Stream 2 Config  -->
+<!-- Stream 3 Config  -->
+    <param>
+        <name>Stream 3 Source</name>
+        <key>flex_3_src</key>
+        <value>6</value>
+        <type>int</type>
+        <hide>#if $flex_num_streams() > 2 then 'none' else 'all'#</hide>
+        <option>
+            <name>[Tuner 1] ADC</name>
+            <key>0</key>
+        </option>
+        <option>
+            <name>[Tuner 1] DDC 1</name>
+            <key>1</key>
+        </option>
+        <option>
+            <name>[Tuner 1] DDC 2</name>
+            <key>2</key>
+        </option>
+        <option>
+            <name>[Tuner 2] ADC</name>
+            <key>3</key>
+        </option>
+        <option>
+            <name>[Tuner 2] DDC 1</name>
+            <key>4</key>
+        </option>
+        <option>
+            <name>[Tuner 2] DDC 2</name>
+            <key>5</key>
+        </option>
+        <option>
+            <name>[Tuner 3] ADC</name>
+            <key>6</key>
+        </option>
+        <option>
+            <name>[Tuner 3] DDC 1</name>
+            <key>7</key>
+        </option>
+        <option>
+            <name>[Tuner 3] DDC 2</name>
+            <key>8</key>
+        </option>
+        <option>
+            <name>[Tuner 4] ADC</name>
+            <key>9</key>
+        </option>
+        <option>
+            <name>[Tuner 4] DDC 1</name>
+            <key>10</key>
+        </option>
+        <option>
+            <name>[Tuner 4] DDC 2</name>
+            <key>11</key>
+        </option>
+        <tab>FlexFFT</tab>
+    </param>
+    <param>
+        <name>Stream 3 Complex</name>
+        <key>flex_3_complex</key>
+        <value>1</value>
+        <type>int</type>
+        <hide>#if $flex_num_streams() > 2 and $flex_3_src() % 3 > 0 then 'none' else 'all'</hide>
+        <option>
+            <name>Disable Complex</name>
+            <key>1</key>
+        </option>
+        <option>
+            <name>Enable Complex</name>
+            <key>0</key>
+        </option>
+        <tab>FlexFFT</tab>
+    </param>
+    <param>
+        <name>Stream 3 Rate</name>
+        <key>flex_3_rate</key>
+        <value>10</value>
+        <type>float</type>
+        <hide>#if $flex_num_streams() > 2 then 'none' else 'all'#</hide>
+        <tab>FlexFFT</tab>
+    </param>
+    <param>
+        <name>Stream 3 Average</name>
+        <key>flex_3_ave</key>
+        <value>1</value>
+        <type>int</type>
+        <hide>#if $flex_num_streams() > 2 then 'none' else 'all'#</hide>
+        <option>
+            <name>1</name>
+            <key>1</key>
+        </option>
+        <option>
+            <name>2</name>
+            <key>2</key>
+        </option>
+        <option>
+            <name>4</name>
+            <key>4</key>
+        </option>
+        <option>
+            <name>8</name>
+            <key>8</key>
+        </option>
+        <option>
+            <name>16</name>
+            <key>16</key>
+        </option>
+        <option>
+            <name>32</name>
+            <key>32</key>
+        </option>
+        <option>
+            <name>64</name>
+            <key>64</key>
+        </option>
+        <option>
+            <name>128</name>
+            <key>128</key>
+        </option>
+        <option>
+            <name>256</name>
+            <key>256</key>
+        </option>
+        <option>
+            <name>512</name>
+            <key>512</key>
+        </option>
+        <option>
+            <name>1024</name>
+            <key>1024</key>
+        </option>
+        <tab>FlexFFT</tab>
+    </param>
+    <param>
+        <name>Stream 3 Size</name>
+        <key>flex_3_size</key>
+        <value>128</value>
+        <type>int</type>
+        <hide>#if $flex_num_streams() > 2 then 'none' else 'all'#</hide>
+        <option>
+            <name>32 [ADC Only]</name>
+            <key>32</key>
+        </option>
+        <option>
+            <name>64</name>
+            <key>64</key>
+        </option>
+        <option>
+            <name>128</name>
+            <key>128</key>
+        </option>
+        <option>
+            <name>256</name>
+            <key>256</key>
+        </option>
+        <option>
+            <name>512</name>
+            <key>512</key>
+        </option>
+        <option>
+            <name>1024</name>
+            <key>1024</key>
+        </option>
+        <option>
+            <name>2048</name>
+            <key>2048</key>
+        </option>
+        <option>
+            <name>4096</name>
+            <key>4096</key>
+        </option>
+        <option>
+            <name>8192 [DDC Only]</name>
+            <key>8192</key>
+        </option>
+        <tab>FlexFFT</tab>
+    </param>
+<!-- End Stream 3 Config  -->
+<!-- Stream 4 Config  -->
+    <param>
+        <name>Stream 4 Source</name>
+        <key>flex_4_src</key>
+        <value>9</value>
+        <type>int</type>
+        <hide>#if $flex_num_streams() > 3 then 'none' else 'all'#</hide>
+        <option>
+            <name>[Tuner 1] ADC</name>
+            <key>0</key>
+        </option>
+        <option>
+            <name>[Tuner 1] DDC 1</name>
+            <key>1</key>
+        </option>
+        <option>
+            <name>[Tuner 1] DDC 2</name>
+            <key>2</key>
+        </option>
+        <option>
+            <name>[Tuner 2] ADC</name>
+            <key>3</key>
+        </option>
+        <option>
+            <name>[Tuner 2] DDC 1</name>
+            <key>4</key>
+        </option>
+        <option>
+            <name>[Tuner 2] DDC 2</name>
+            <key>5</key>
+        </option>
+        <option>
+            <name>[Tuner 3] ADC</name>
+            <key>6</key>
+        </option>
+        <option>
+            <name>[Tuner 3] DDC 1</name>
+            <key>7</key>
+        </option>
+        <option>
+            <name>[Tuner 3] DDC 2</name>
+            <key>8</key>
+        </option>
+        <option>
+            <name>[Tuner 4] ADC</name>
+            <key>9</key>
+        </option>
+        <option>
+            <name>[Tuner 4] DDC 1</name>
+            <key>10</key>
+        </option>
+        <option>
+            <name>[Tuner 4] DDC 2</name>
+            <key>11</key>
+        </option>
+        <tab>FlexFFT</tab>
+    </param>
+    <param>
+        <name>Stream 4 Complex</name>
+        <key>flex_4_complex</key>
+        <value>1</value>
+        <type>int</type>
+        <hide>#if $flex_num_streams() > 3 and $flex_4_src() % 3 > 0 then 'none' else 'all'</hide>
+        <option>
+            <name>Disable Complex</name>
+            <key>1</key>
+        </option>
+        <option>
+            <name>Enable Complex</name>
+            <key>0</key>
+        </option>
+        <tab>FlexFFT</tab>
+    </param>
+    <param>
+        <name>Stream 4 Rate</name>
+        <key>flex_4_rate</key>
+        <value>10</value>
+        <type>float</type>
+        <hide>#if $flex_num_streams() > 3 then 'none' else 'all'#</hide>
+        <tab>FlexFFT</tab>
+    </param>
+    <param>
+        <name>Stream 4 Average</name>
+        <key>flex_4_ave</key>
+        <value>1</value>
+        <type>int</type>
+        <hide>#if $flex_num_streams() > 3 then 'none' else 'all'#</hide>
+        <option>
+            <name>1</name>
+            <key>1</key>
+        </option>
+        <option>
+            <name>2</name>
+            <key>2</key>
+        </option>
+        <option>
+            <name>4</name>
+            <key>4</key>
+        </option>
+        <option>
+            <name>8</name>
+            <key>8</key>
+        </option>
+        <option>
+            <name>16</name>
+            <key>16</key>
+        </option>
+        <option>
+            <name>32</name>
+            <key>32</key>
+        </option>
+        <option>
+            <name>64</name>
+            <key>64</key>
+        </option>
+        <option>
+            <name>128</name>
+            <key>128</key>
+        </option>
+        <option>
+            <name>256</name>
+            <key>256</key>
+        </option>
+        <option>
+            <name>512</name>
+            <key>512</key>
+        </option>
+        <option>
+            <name>1024</name>
+            <key>1024</key>
+        </option>
+        <tab>FlexFFT</tab>
+    </param>
+    <param>
+        <name>Stream 4 Size</name>
+        <key>flex_4_size</key>
+        <value>128</value>
+        <type>int</type>
+        <hide>#if $flex_num_streams() > 3 then 'none' else 'all'#</hide>
+        <option>
+            <name>32 [ADC Only]</name>
+            <key>32</key>
+        </option>
+        <option>
+            <name>64</name>
+            <key>64</key>
+        </option>
+        <option>
+            <name>128</name>
+            <key>128</key>
+        </option>
+        <option>
+            <name>256</name>
+            <key>256</key>
+        </option>
+        <option>
+            <name>512</name>
+            <key>512</key>
+        </option>
+        <option>
+            <name>1024</name>
+            <key>1024</key>
+        </option>
+        <option>
+            <name>2048</name>
+            <key>2048</key>
+        </option>
+        <option>
+            <name>4096</name>
+            <key>4096</key>
+        </option>
+        <option>
+            <name>8192 [DDC Only]</name>
+            <key>8192</key>
+        </option>
+        <tab>FlexFFT</tab>
+    </param>
+<!-- End Stream 4 Config  -->
     <check>64000000>=$valueg1d1f>=-64000000</check>
     <check>64000000>=$valueg1d2f>=-64000000</check>
     <check>64000000>=$valueg2d1f>=-64000000</check>
@@ -509,12 +1364,76 @@ self.$(id).update_samp_rate($valueg4d2sr, 4, 2)
     <check>4>=$valuet3>=1</check>
     <check>4>=$valuet4>=1</check>
     <source>
-        <name>out</name>
-        <type>complex</type>
-        <nports>($numddc1+((($nchan/2)-($nchan/4)) * $numddc2)+(($nchan/3)*$numddc3)+(($nchan/4) * $numddc4))</nports>
+        <name>outA</name>
+        <type>#try
+#if $flex_num_streams() > 0 and (0 >= (($numddc1()+((($nchan()/2)-($nchan()/4)) * $numddc2())+(($nchan()/3)*$numddc3())+(($nchan()/4) * $numddc4())) - ((($flex_num_streams() - (($flex_num_streams()/2)-($flex_num_streams()/4))-($flex_num_streams()/3)-($flex_num_streams()/4)) * $flex_1_complex() * (($flex_1_src()%3) - (($flex_1_src()%3)/2))) + ((($flex_num_streams()/2) - ($flex_num_streams()/4))*$flex_2_complex() * (($flex_2_src()%3) - (($flex_2_src()%3)/2))) + (($flex_num_streams()/3) * $flex_3_complex() * (($flex_3_src()%3) - (($flex_3_src()%3)/2))) + (($flex_num_streams()/4) * $flex_4_complex() * (($flex_4_src()%3) - (($flex_4_src()%3)/2))))))
+float#slurp
+#set global $showports = True
+#else 
+complex#slurp
+#set global $showports = False
+#end if
+#except
+complex#slurp
+#set global $showports = False
+#end try</type>
+        <nports>#try
+#if $flex_num_streams() > 0 and (0 >= (($numddc1()+((($nchan()/2)-($nchan()/4)) * $numddc2())+(($nchan()/3)*$numddc3())+(($nchan()/4) * $numddc4())) - ((($flex_num_streams() - (($flex_num_streams()/2)-($flex_num_streams()/4))-($flex_num_streams()/3)-($flex_num_streams()/4)) * $flex_1_complex() * (($flex_1_src()%3) - (($flex_1_src()%3)/2))) + ((($flex_num_streams()/2) - ($flex_num_streams()/4))*$flex_2_complex() * (($flex_2_src()%3) - (($flex_2_src()%3)/2))) + (($flex_num_streams()/3) * $flex_3_complex() * (($flex_3_src()%3) - (($flex_3_src()%3)/2))) + (($flex_num_streams()/4) * $flex_4_complex() * (($flex_4_src()%3) - (($flex_4_src()%3)/2))))))
+$flex_num_streams#slurp
+#else 
+(($numddc1()+((($nchan()/2)-($nchan()/4)) * $numddc2())+(($nchan()/3)*$numddc3())+(($nchan()/4) * $numddc4())) - ((($flex_num_streams() - (($flex_num_streams()/2)-($flex_num_streams()/4))-($flex_num_streams()/3)-($flex_num_streams()/4)) * $flex_1_complex() * (($flex_1_src()%3) - (($flex_1_src()%3)/2))) + ((($flex_num_streams()/2) - ($flex_num_streams()/4))*$flex_2_complex() * (($flex_2_src()%3) - (($flex_2_src()%3)/2))) + (($flex_num_streams()/3) * $flex_3_complex() * (($flex_3_src()%3) - (($flex_3_src()%3)/2))) + (($flex_num_streams()/4) * $flex_4_complex() * (($flex_4_src()%3) - (($flex_4_src()%3)/2)))))#slurp
+#end if
+#except
+#set $complex_out = (int(str($numddc1))+(((int(str($nchan))/2)-(int(str($nchan))/4)) * int(str($numddc2)))+((int(str($nchan))/3)*int(str($numddc3)))+((int(str($nchan))/4) * int(str($numddc4))))
+#set $num_cancelled = (((int(str($flex_num_streams)) - ((int(str($flex_num_streams))/2)-(int(str($flex_num_streams))/4))-(int(str($flex_num_streams))/3)-(int(str($flex_num_streams))/4)) * int(str($flex_1_complex)) * ((int(str($flex_1_src))%3) - ((int(str($flex_1_src))%3)/2))) + (((int(str($flex_num_streams))/2) - (int(str($flex_num_streams))/4))*int(str($flex_2_complex)) * ((int(str($flex_2_src))%3) - ((int(str($flex_2_src))%3)/2))) + ((int(str($flex_num_streams))/3) * int(str($flex_3_complex)) * ((int(str($flex_3_src))%3) - ((int(str($flex_3_src))%3)/2))) + ((int(str($flex_num_streams))/4) * int(str($flex_4_complex)) * ((int(str($flex_4_src))%3) - ((int(str($flex_4_src))%3)/2))))
+#if int(str($flex_num_streams)) > 0 and 0 >= ($complex_out - $num_cancelled)
+$flex_num_streams#slurp
+#else
+($complex_out - $num_cancelled)#slurp
+#end if
+#end try</nports>
+    </source>
+    <source>
+        <name>outB</name>
+        <type>float</type>
+        <nports>$flex_num_streams</nports>
+        <optional>1</optional>
+        <hide>#try
+#if $flex_num_streams() > 0 and (0 &lt; (($numddc1()+((($nchan()/2)-($nchan()/4)) * $numddc2())+(($nchan()/3)*$numddc3())+(($nchan()/4) * $numddc4())) - ((($flex_num_streams() - (($flex_num_streams()/2)-($flex_num_streams()/4))-($flex_num_streams()/3)-($flex_num_streams()/4)) * $flex_1_complex() * (($flex_1_src()%3) - (($flex_1_src()%3)/2))) + ((($flex_num_streams()/2) - ($flex_num_streams()/4))*$flex_2_complex() * (($flex_2_src()%3) - (($flex_2_src()%3)/2))) + (($flex_num_streams()/3) * $flex_3_complex() * (($flex_3_src()%3) - (($flex_3_src()%3)/2))) + (($flex_num_streams()/4) * $flex_4_complex() * (($flex_4_src()%3) - (($flex_4_src()%3)/2))))))
+0#slurp
+#else
+1#slurp
+#end if
+#except
+#set $complex_out = (int(str($numddc1))+(((int(str($nchan))/2)-(int(str($nchan))/4)) * int(str($numddc2)))+((int(str($nchan))/3)*int(str($numddc3)))+((int(str($nchan))/4) * int(str($numddc4))))
+#set $num_cancelled = (((int(str($flex_num_streams)) - ((int(str($flex_num_streams))/2)-(int(str($flex_num_streams))/4))-(int(str($flex_num_streams))/3)-(int(str($flex_num_streams))/4)) * int(str($flex_1_complex)) * ((int(str($flex_1_src))%3) - ((int(str($flex_1_src))%3)/2))) + (((int(str($flex_num_streams))/2) - (int(str($flex_num_streams))/4))*int(str($flex_2_complex)) * ((int(str($flex_2_src))%3) - ((int(str($flex_2_src))%3)/2))) + ((int(str($flex_num_streams))/3) * int(str($flex_3_complex)) * ((int(str($flex_3_src))%3) - ((int(str($flex_3_src))%3)/2))) + ((int(str($flex_num_streams))/4) * int(str($flex_4_complex)) * ((int(str($flex_4_src))%3) - ((int(str($flex_4_src))%3)/2))))
+#if int(str($flex_num_streams)) > 0 and 0 &lt; ($complex_out - $num_cancelled) 
+0#slurp
+#else
+1#slurp
+#end if
+#end try</hide>
     </source>
     <doc>
-This block will allow you to stream data from the Polaris radio over a 10 Gig connection.
+This block will allow you to stream data from the Polaris radio over a 10 Gig connection.  There are two types of supported streaming:
+complex and flexfft (float).  Complex data is formatted for GNURadio processing and can easily be used for SDR applications.  FlexFFT
+data is output as floats in groupings of a specified fft size.  This data can be seen in a time sink, but it is recommended to view it
+with the gr-flexfft sink (which uses the tagged metadata to adjust the display and values automatically).
+
+When using complex:
+    The block uses "groups" for organizing output data.  If you want a complex stream, create at least 1 group, and select an appropriate
+    tuner for it.  Ensure that you have at least 1 DDC output available for that group.
+
+When using flexfft:
+    The block will organize flexfft data into streams.  When a flexfft stream is enabled, select the source you would like to stream data
+    from.  You must make sure that you have a group which includes RF control of your source in order to stream.  If you are streaming from
+    an ADC, you can must make sure a group exists that has the matching tuner selected.  If you are streaming from a DDC, you must make sure
+    a group has the appropriate tuner and has enough DDC's to provide control.  If you have selected a DDC for flexfft streaming and do not
+    want complex output, you can use the "Disable Complex" option on the FlexFFT page for that stream.
+
+Note when using flexfft:
+    FlexFFT has some limitations due to the FPGA load.  If you are streaming FlexFFT the Polaris will periodically check the FPGA load.  If
+    it detects the FPGA is running at 100% or more, then you may be missing data from 1 or more of your FlexFFT streams.
 
 Parameters:
       Polaris Command IP : The TCP connection for command and control.  
@@ -522,14 +1441,20 @@ Parameters:
       Machine 10 Gig IP : The IP of the destination of the data packets.
       Mnemonic Port : The port the Polaris is running mnemonic app on.
       Data Stream Port : The port the UDP data is coming in on.
+      Flex FFT Port : The port on which FlexFFT data is expected.
       Independent Operation : Allows each tuner to operate indepenently or as a group.
       Num Output Group : Number of output groups you want.  Each group has 2 DDCs.
       Each output group has a Frequency, Attenuation, PreAmp, Number of DDCs, and Tuner tabs that accept values.
             Group Tuner : Choose what RF inputs you are plugged into for that output.
             Attenuation : Accepts  0 dB to 46 dB. 
             PreAmp : Choose to enable or diable the preamp on this output.
-            Tuner Frequency : Accepts  2,000,000 Hz to 6,200,000,000 Hz in 1,000,000 Hz steps.
-            DDC Offset : Offset from the tuner frequency. : Accepts -64,000,000 Hz to 64,000,000 Hz in 1 Hz steps.
-            Sample Rate : The sample rate for the DDC : Accepts 977 Hz to 64,000,000 Hz in 1 Hz resolution or 128,000,000 Hz.
+            Tuner Frequency : Accepts  2,000,000 Hz (2 MHz) to 6,200,000,000 Hz (6.2 GHz) in 1,000,000 Hz (1 MHz) steps.
+            DDC Offset : Offset from the tuner frequency. : Accepts -64,000,000 Hz (-64 MHz) to 64,000,000 Hz (64 MHz) in 1 Hz steps.
+            Sample Rate : The sample rate for the DDC : Accepts 977 Hz to 64,000,000 Hz (64 MHz) in 1 Hz resolution or 128,000,000 Hz (128 MHz).
+      Each FlexFFT Stream has a Source, Rate, Average and Size associated with it.
+            Stream Source : Where should the FlexFFT data come from.
+            Stream Rate : How many FFT's per second to capture.
+            Stream Average : How much averaging to apply to the stream.
+            Stream Size : How many bins in the FFT.
     </doc>
 </block>

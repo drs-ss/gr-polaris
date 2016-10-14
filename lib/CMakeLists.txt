@@ -31,6 +31,8 @@ list(APPEND polaris_sources
     aligned_buffer.cpp
     udp_listener.cpp
     task.cpp
+    flex_fft_parser.cpp
+    flex_fft_manager.cpp
 )
 
 set(polaris_sources "${polaris_sources}" PARENT_SCOPE)

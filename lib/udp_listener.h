@@ -43,6 +43,15 @@
 
 #include "aligned_buffer.h"
 
+/**
+ * @def OVERFLOW_MSG 
+ * @brief Defines the message that is printed when overflow 
+ *        occurs.
+ *  
+ * Defines the message that is printed when overflow occurs. 
+ */
+#define OVERFLOW_MSG "O"
+
 /** 
  * @def NUM_BUFFS 
  * @brief Determines how many packets to buffer in udp_listener. 

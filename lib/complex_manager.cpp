@@ -99,7 +99,6 @@ complex_manager::threads_active()
 void 
 complex_manager::update_tuners(int *tuners, int num_tuners)
 {
-
     for (int i = 0; i < NUM_STREAMS; i++) {
         m_mang[i].tuner_valid_safe = false;
         for (int j = 0; j < num_tuners; j++) { 
@@ -293,8 +292,6 @@ complex_manager::operator()()
 
             if (!m_mang[stream_id].tuner_valid) {
                 // This stream isn't valid, ignore this packet.
-                std::cout << "Invalid stream ID recieved : " 
-                    << stream_id << std::endl;
                 index += 1;
                 continue;
             }

@@ -139,7 +139,7 @@ udp_listener::operator()()
             }
             if (m_do_switch) {
                 if (overflow > 0) {
-                    std::cout << "O";
+                    std::cout << OVERFLOW_MSG;
                     overflow = 0;
                 }
                 if (cur_index > 0) {

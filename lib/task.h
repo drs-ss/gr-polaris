@@ -34,6 +34,9 @@
 #include <iostream>
 #include <vector>
 
+#ifndef TASK_H
+#define TASK_H
+
 /**
  * The task_impl class is a helper class which continously 
  * calls a single function and sleeps in between calls until 
@@ -84,4 +87,4 @@ private:
     boost::mutex mtx;
     boost::condition_variable cv;
 };
-
+#endif

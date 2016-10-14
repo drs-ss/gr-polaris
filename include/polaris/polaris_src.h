@@ -55,10 +55,12 @@ public:
     static sptr make(std::string ip, 
                      int port,
                      int mne_port,
+                     int flex_port,
                      std::string streamip, 
                      std::string fibip, 
                      int num_outputs,
                      int num_groups, 
+                     int num_flex_outputs,
                      bool i_op, 
                      int phys);
 
@@ -69,6 +71,13 @@ public:
     virtual void update_ddc_offset(double off, int group, int ddc)=0;
     virtual void update_samp_rate(double sr, int group, int ddc)=0;
     virtual void update_atten(double atten, int group)=0;
+
+    // Flex FFT functions
+    virtual void update_flex_stream(int stream_id, int source_id,
+                                    int disable_complex)=0;
+    virtual void update_flex_rate(int stream_id, double sr)=0;
+    virtual void update_flex_ave(int stream_id, int ave)=0;
+    virtual void update_flex_size(int stream_id, int size)=0;
 };
 
 } // namespace polaris
