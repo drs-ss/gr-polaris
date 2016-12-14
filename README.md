@@ -15,6 +15,10 @@ If you already have GNURadio installed, you can install this block through the s
 	sudo make install
 	sudo ldconfig
 
+If you are using the default Polaris settings, please ensure that the MTU on your 10Gig Ethernet connection is 9000.
+
+If you experience an error like "bad_alloc" then you may need to reduce the amount of memory allocated to the buffers in the block.  You can do this by tweaking the defines found in lib/complex_manager.h and lib/udp_listener.h.  Reducing NUM_COMPLEX and NUM_BUFFS by half is usually sufficient.  This will likely impact performance at higher sample rates but should not cause a problem at lower rates.
+
 ## Adjusting System Settings
 
 There are a couple of things you can do to improve the performance.
